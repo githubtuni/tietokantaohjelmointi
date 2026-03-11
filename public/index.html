@@ -50,6 +50,20 @@ tr:hover {
     cursor: pointer;
 }
 
+.selected {
+  background-color: #dee7f1;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #eeeded;
+  padding: 6px;
+}
+
 </style>
 
 </head>
@@ -88,6 +102,12 @@ tr:hover {
         <tbody></tbody>
       </table>
   <div id="asiakasInfo" class="info">Lisätietoja klikkaamalla</div>
+   <h3>Lisää uusi asiakas</h3>
+
+  <input id="nimi" placeholder="Nimi">
+  <input id="osoite" placeholder="Osoite">
+
+  <button onclick="addCustomer()">Lisää asiakas</button>
 </div>
 
 <div id="tyokohteet" class="tab-content">
@@ -149,6 +169,31 @@ async function loadTyokohteet() {
   });
 }
 loadTyokohteet();
+
+async function addCustomer() {
+
+  const nimi = document.getElementById("nimi").value;
+  const osoite = document.getElementById("osoite").value;
+
+  if (nimi === "" || osoite === "") {
+    alert("Täytä nimi ja osoite");
+    return;
+  }
+
+  await fetch("/asiakas", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      nimi: nimi,
+      osoite: osoite
+    })
+  });
+  document.getElementById("nimi").value = "";
+  document.getElementById("osoite").value = "";
+  loadAsiakas();
+}
 </script>
 
 </body>
