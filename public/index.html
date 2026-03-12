@@ -122,6 +122,23 @@ th, td {
       </table>
   <div id="tyokohdeInfo" class="info">Lisätietoja klikkaamalla</div>
 </div>
+ <button onclick="toggleTyokohdeForm()">+ Lisää asiakkaalle työkohde</button>
+
+  <div id="tyokohdeForm" class="form-box" style="display:none">
+
+    <h3>Lisää uusi työkohde</h3>
+
+    <input id="tyokohdeNimi" placeholder="Työkohteen nimi"><br>
+    <input id="tyokohdeOsoite" placeholder="Osoite"><br>
+    <input id="tyokohdeAsiakas" placeholder="Asiakas ID"><br>
+
+    <button onclick="addTyokohde()">Tallenna</button>
+
+  </div>
+
+</div>
+
+
 
 <script>
 function openTab(tabId) {
