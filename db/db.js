@@ -29,3 +29,17 @@ export async function getTyokohde() {
     return [];
   }
 }
+
+export async function addTyokohde(asiakas_id, nimi, osoite) {
+
+  try {
+    await pool.query(
+      "INSERT INTO tyokohde (asiakas_id, nimi, osoite) VALUES ($1,$2,$3)",
+      [asiakas_id, nimi, osoite]
+    );
+
+  } catch (err) {
+    console.error(err);
+  }
+
+} 
