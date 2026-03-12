@@ -220,6 +220,23 @@ async function addCustomer() {
   document.getElementById("osoite").value = "";
   loadAsiakas();
 }
+async function addTyokohde() {
+
+  const nimi = document.getElementById("tyokohdeNimi").value;
+  const osoite = document.getElementById("tyokohdeOsoite").value;
+  const asiakas_id = document.getElementById("tyokohdeAsiakas").value;
+
+  await fetch("/tyokohde", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nimi, osoite, asiakas_id })
+  });
+  document.getElementById("tyokohdeNimi").value = "";
+  document.getElementById("tyokohdeOsoite").value = "";
+  document.getElementById("tyokohdeAsiakas").value = ""
+
+  loadTyokohteet();
+}
 
 </script>
 
