@@ -154,8 +154,18 @@ function openTab(tabId) {
 function showInfo(infoId, text) {
     document.getElementById(infoId).textContent = text;
 }
+function toggleTyokohdeForm() {
 
-// Load asiakas data from server
+  const form = document.getElementById("tyokohdeForm");
+
+  if (form.style.display === "none") {
+    form.style.display = "block";
+  } else {
+    form.style.display = "none";
+  }
+
+}
+
 async function loadAsiakas() {
     const res = await fetch('/asiakas');
     const data = await res.json();
@@ -210,6 +220,7 @@ async function addCustomer() {
   document.getElementById("osoite").value = "";
   loadAsiakas();
 }
+
 </script>
 
 </body>
