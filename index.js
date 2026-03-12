@@ -1,6 +1,6 @@
 import http from 'http';
 import fs from 'fs';
-import { getAsiakas, getTyokohde } from './db/db.js';
+import { getAsiakas, getTyokohde, addTyokohde } from './db/db.js';
 
 const hostname = '192.168.4.115';
 const port = 8031; //ryhmä 3 porttinumero
@@ -19,11 +19,27 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify(customers));
     }
 
-    else if (req.url === '/tyokohde') {
+    else if (req.url === '/tyokohde' && req.method === 'GET') {
         const sites = await getTyokohde();
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(sites));
     }
+    else if (req.url === '/tyokohde' && req.method === 'POST') {
+
+    let body = '';
+    req.on('data', chunk => {
+        body += chunk;
+    });
+
+    req.on('end', async () => {
+
+        const data = JSON.parse(body);
+        await addTyokohde(data.asiakas_id, data.nimi, data.osoite);
+        res.end('ok');
+
+    });
+
+}
 
     else {
     res.statusCode = 404;
@@ -38,3 +54,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(port, hostname, () => {
  console.log(`Server running at http://tie-tkannat.it.tuni.fi:${port}`);
 });
+
+
