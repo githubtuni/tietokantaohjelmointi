@@ -26,3 +26,20 @@ INSERT INTO tyokohde (asiakas_id, nimi, osoite) VALUES ('2','nimi?', 'Nurmitie')
 INSERT INTO tyokohde (asiakas_id, nimi, osoite) VALUES ('2', 'nimi?', 'Huitsinneva');
 INSERT INTO tyokohde (asiakas_id, nimi, osoite) VALUES ('3', 'nimi?', 'Puotonkorpi');
 
+-- lasku
+CREATE TABLE lasku (
+    lasku_id SERIAL PRIMARY KEY,
+    tyokohde_id INTEGER NOT NULL,
+    pvm DATE,
+    laskun_tila VARCHAR(100),
+    työtyyppi VARCHAR(100),
+    erapaiva DATE,
+    maksettu BOOLEAN,
+    ed_lasku_id INTEGER,
+    viivastyskorko INTEGER,
+    laskutuslisa INTEGER,
+    muistutusnumero INTEGER,
+    FOREIGN KEY (tyokohde_id) REFERENCES tyokohde(tyokohde_id),
+    FOREIGN KEY (ed_lasku_id) REFERENCES lasku(lasku_id)
+);
+

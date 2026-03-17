@@ -10,6 +10,30 @@ const pool = new Pool({
   port: 5432,
 })
 
+export async function getLasku() {
+    try {
+      const result = await pool.query('SELECT * FROM lasku');
+      return result.rows;
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+}
+
+export async function addLasku(tyokohde_id, tyotyyppi) {
+
+  try {
+    await pool.query(
+      "INSERT INTO lasku (tyokohde_id, tyotyyppi, laskun_tila) VALUES ($1,$2,'kesken')",
+      [tyokohde_id, tyotyyppi]
+    );
+
+  } catch (err) {
+    console.error(err);
+  }
+
+} 
+
 export async function getAsiakas() {
     try {
       const result = await pool.query('SELECT * FROM asiakas');

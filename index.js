@@ -1,6 +1,6 @@
 import http from 'http';
 import fs from 'fs';
-import { getAsiakas, getTyokohde, addTyokohde } from './db/db.js';
+import { getLasku, getAsiakas, getTyokohde, addTyokohde, addLasku} from './db/db.js';
 
 const hostname = '192.168.4.115';
 const port = 8031; //ryhmä 3 porttinumero
@@ -13,6 +13,37 @@ const server = http.createServer(async (req, res) => {
         res.setHeader('Content-Type','text/html')
         res.end(html)
     }
+
+    else if (req.url === '/lasku' && req.method === 'GET') {
+        try {
+            const laskut = await getLasku();
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(laskut));
+        } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Database error' }));
+        }
+    }
+
+    else if (req.url === '/lasku' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                await addLasku(data.tyokohde_id, data.tyotyyppi);
+                res.end('ok');
+            } catch (err) {
+                console.error(err);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: 'Server error' }));
+            }
+        });
+    }
+
     else if (req.url === '/asiakas') {
         const customers = await getAsiakas();
         res.setHeader('Content-Type', 'application/json');
@@ -26,20 +57,20 @@ const server = http.createServer(async (req, res) => {
     }
     else if (req.url === '/tyokohde' && req.method === 'POST') {
 
-    let body = '';
-    req.on('data', chunk => {
-        body += chunk;
-    });
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk;
+        });
 
-    req.on('end', async () => {
+        req.on('end', async () => {
 
-        const data = JSON.parse(body);
-        await addTyokohde(data.asiakas_id, data.nimi, data.osoite);
-        res.end('ok');
+            const data = JSON.parse(body);
+            await addTyokohde(data.asiakas_id, data.nimi, data.osoite);
+            res.end('ok');
 
-    });
+        });
 
-}
+    }
 
     else {
     res.statusCode = 404;

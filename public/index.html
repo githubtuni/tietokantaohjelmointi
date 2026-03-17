@@ -127,8 +127,12 @@ th, td {
           <label for="tyokohdeSelect">Työkohteen ID ja asiakas:</label><br>
           <select id="tyokohdeSelect" name="tyokohde_id" required>
               <option value="">-- Valitse työkohde --</option>
-              <option value="1">1 -- Asiakas: Matti Meikäläinen</option>
-              <option value="2">2 -- Asiakas: Liisa Laine</option>
+          </select><br><br>
+          <label for="tyotyyppiSelect">Työtyyppi:</label><br>
+          <select id="tyotyyppiSelect" name="tyotyyppi" required>
+              <option value="">-- Valitse työtyyppi --</option>
+              <option value="tuntityö">Tuntityö</option>
+              <option value="urakkatyö">Urakkatyö</option>
           </select><br><br>
 
           <button type="submit" class="submitButton">
@@ -227,6 +231,7 @@ function openTab(tabId) {
 function showInfo(infoId, text) {
     document.getElementById(infoId).textContent = text;
 }
+
 function toggleTyokohdeForm() {
 
   const form = document.getElementById("tyokohdeForm");
@@ -268,6 +273,45 @@ function toggleLaskuForm() {
     laskuForm.style.display = "none";
   }
 }
+document.getElementById("formLasku").addEventListener("submit", function (e) {
+    e.preventDefault();
+    addLasku();
+});
+
+async function addLasku(){
+    const select = document.getElementById("tyokohdeSelect");
+    const tyokohde_id = document.getElementById("tyokohdeSelect").value;
+    const tyotyyppi = document.getElementById("tyotyyppiSelect").value;
+
+    if (!tyokohde_id || !tyotyyppi) {
+        alert("Valitse työkohde ja työtyyppi");
+        return;
+    }
+    await fetch("/lasku", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tyokohde_id, tyotyyppi })
+    });
+  document.getElementById("tyokohdeSelect").value = "";
+  document.getElementById("tyotyyppiSelect").value = "";
+  loadLasku();
+}
+
+
+async function loadLasku() {
+    const res = await fetch('/lasku');
+    const data = await res.json();
+    const tbody = document.querySelector('#laskuTable tbody');
+    tbody.innerHTML = '';
+
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${row.lasku_id}</td><td>${row.laskun_tila}</td>`;
+      tr.onclick = () => showInfo('laskuInfo', `Työkohde: ${row.tyokohde_id}, Työtyyppi: ${row.tyotyyppi}, yms tietoja tähän`);
+      tbody.appendChild(tr);
+    });
+}
+loadLasku();
 
 async function loadAsiakas() {
     const res = await fetch('/asiakas');
@@ -287,15 +331,30 @@ loadAsiakas();
 async function loadTyokohteet() {
   const res = await fetch('/tyokohde');
   const data = await res.json();
+
+  // asiakastabille
   const tbody = document.querySelector('#tyokohdeTable tbody');
   tbody.innerHTML = '';
-
   data.forEach(row => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${row.tyokohde_id}</td><td>${row.osoite}</td>`;
     tr.onclick = () => showInfo('tyokohdeInfo', `Työkohdenimi: ${row.nimi}, Asiakas: ${row.asiakas_id}, Osoite: ${row.osoite}`);
     tbody.appendChild(tr);
   });
+
+  // laskunlisäysformin optionit
+  const select = document.getElementById('tyokohdeSelect');
+  if (select) {
+    select.innerHTML = '<option value="">-- Valitse työkohde --</option>';
+
+    data.forEach(row => {
+      const option = document.createElement('option');
+      option.value = row.tyokohde_id;
+      option.textContent = `Osoite: ${row.osoite}, ID: ${row.tyokohde_id}, Asiakas: ${row.asiakas_id}`;
+      select.appendChild(option);
+    });
+  }
+
 }
 loadTyokohteet();
 
