@@ -39,6 +39,12 @@ li {
   margin: 5px 0;
 }
 
+#tablesContainer {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
 .info {
   margin-top: 10px;
   padding: 10px;
@@ -54,6 +60,15 @@ tr:hover {
   background-color: #dee7f1;
 }
 
+.form {
+  display:none; 
+  border:1px solid #ccc; 
+  padding:15px; 
+  width:350px; 
+  border-radius:8px; 
+  background:#f9f9f9;
+}
+
 table {
   border-collapse: collapse;
   width: 100%;
@@ -62,6 +77,15 @@ table {
 th, td {
   border: 1px solid #eeeded;
   padding: 6px;
+}
+
+.submitButton {
+  padding:6px 12px; 
+  border:none; 
+  background:#4CAF50; 
+  color:white; 
+  border-radius:4px; 
+  cursor:pointer;
 }
 
 </style>
@@ -74,24 +98,78 @@ th, td {
 <div class="tabs">
   <button class="tab-button active" onclick="openTab('laskut')">Laskut</button>
   <button class="tab-button" onclick="openTab('asiakkaat')">Asiakkaat</button>
-  <button class="tab-button" onclick="openTab('tyokohteet')">Työkohteet</button>
 </div>
 
 
 <div id="laskut" class="tab-content active">
-    <table id="laskuTable">
-        <thead>
-          <tr>
-            <th>Lasku-ID</th>
-            <th>Tila</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    <div id="laskuInfo" class="info">Lisätietoja klikkaamalla</div>
+  <table id="laskuTable">
+    <thead>
+      <tr>
+        <th>Lasku-ID</th>
+        <th>Tila</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  
+  <div id="laskuInfo" class="info">Lisätietoja klikkaamalla</div>
+  <br>
+    
+  <button onclick="toggleLaskuForm()">+ Luo laskupohja</button>
+  <button onclick="">+ Muokkaa laskua</button>
+  <button onclick="toggleTuntityoForm()">+ Lisää tuntityö</button>
+  <button onclick="toggleTarvikeForm()">+ Lisää tarvike</button>
+
+  <div id="laskuForm" class="form">
+      <h3>Uusi laskupohja</h3>
+
+      <form id="formLasku">
+          <label for="tyokohdeSelect">Työkohteen ID ja asiakas:</label><br>
+          <select id="tyokohdeSelect" name="tyokohde_id" required>
+              <option value="">-- Valitse työkohde --</option>
+          </select><br><br>
+          <label for="tyotyyppiSelect">Työtyyppi:</label><br>
+          <select id="tyotyyppiSelect" name="tyotyyppi" required>
+              <option value="">-- Valitse työtyyppi --</option>
+              <option value="tuntityö">Tuntityö</option>
+              <option value="urakkatyö">Urakkatyö</option>
+          </select><br><br>
+
+          <button type="submit" class="submitButton">
+              Lisää laskupohja
+          </button>
+      </form>
+  </div>
+
+  <div id="tuntityoForm" class="form">
+    <h3>Lisää uusi tuntityö</h3>
+
+    <form id="formTuntityo">
+        <label for="laskuId">Laskun ID:</label><br>
+        <input type="number" min="0" id="laskuId" name="laskuId" placeholder="Laskun ID" required><br><br>
+
+        <label for="paivamaara">Päivämäärä:</label><br>
+        <input type="date" id="paivamaara" name="paivamaara" required><br><br>
+
+        <label for="tunnit">Tunnit:</label><br>
+        <input type="number" id="tunnit" name="tunnit" step="0.01" placeholder="Tunnit" required><br><br>
+
+        <label for="tyotyyppi_id">Työtyypin ID:</label><br>
+        <input type="number" min="0" id="tyotyyppi_id" name="tyotyyppi_id" placeholder="Työtyypin ID" required><br><br>
+
+        <label for="alepros">Alennusprosentti:</label><br>
+        <input type="number" id="alepros" name="alepros" min="0" max="100" placeholder="Alennus %" value="0"><br><br>
+
+        <button type="submit" class="submitButton">
+            Lisää tuntityö
+        </button>
+    </form>
+  </div>
 </div>
 
 <div id="asiakkaat" class="tab-content">
+  
+  <div id="tablesContainer">
     <table id="asiakasTable">
         <thead>
           <tr>
@@ -101,29 +179,7 @@ th, td {
         </thead>
         <tbody></tbody>
       </table>
-      <div id="asiakasInfo" class="info">Lisätietoja klikkaamalla</div>
-      <button onclick="toggleTyokohdeForm()">+ Lisää asiakkaalle työkohde</button>
 
-      <div id="tyokohdeForm" class="form-box" style="display:none">
-
-        <h3>Lisää uusi työkohde</h3>
-
-        <input id="tyokohdeNimi" placeholder="Työkohteen nimi"><br>
-        <input id="tyokohdeOsoite" placeholder="Osoite"><br>
-        <input id="tyokohdeAsiakas" placeholder="Asiakas ID"><br>
-
-        <button onclick="addTyokohde()">Tallenna</button>
-
-  </div>
-  <h3>Lisää uusi asiakas</h3>
-
-  <input id="nimi" placeholder="Nimi">
-  <input id="osoite" placeholder="Osoite">
-
-  <button onclick="addCustomer()">Lisää asiakas</button>
-</div>
-
-<div id="tyokohteet" class="tab-content">
     <table id="tyokohdeTable">
         <thead>
           <tr>
@@ -133,8 +189,29 @@ th, td {
         </thead>
         <tbody></tbody>
       </table>
+  </div>
+
   <div id="tyokohdeInfo" class="info">Lisätietoja klikkaamalla</div>
+  <br>
+
+  <button onclick="toggleTyokohdeForm()">+ Lisää asiakkaalle työkohde</button>
+      
+  <div id="tyokohdeForm" class="form-box" style="display:none">
+    <h3>Lisää uusi työkohde</h3>
+    <input id="tyokohdeNimi" placeholder="Työkohteen nimi"><br>
+    <input id="tyokohdeOsoite" placeholder="Osoite"><br>
+    <input id="tyokohdeAsiakas" placeholder="Asiakas ID"><br>
+    <button onclick="addTyokohde()">Tallenna</button>
+  </div>
+  
+  <h3>Lisää uusi asiakas</h3>
+
+  <input id="nimi" placeholder="Nimi">
+  <input id="osoite" placeholder="Osoite">
+
+  <button onclick="addCustomer()">Lisää asiakas</button>
 </div>
+
  
 
 
@@ -154,6 +231,7 @@ function openTab(tabId) {
 function showInfo(infoId, text) {
     document.getElementById(infoId).textContent = text;
 }
+
 function toggleTyokohdeForm() {
 
   const form = document.getElementById("tyokohdeForm");
@@ -166,6 +244,75 @@ function toggleTyokohdeForm() {
 
 }
 
+function toggleTarvikeForm() {
+  const tarvikeForm = document.getElementById("tarvikeForm");
+
+  if (form.style.display === "none") {
+    form.style.display = "block";
+  } else {
+    form.style.display = "none";
+  }
+}
+
+function toggleTuntityoForm() {
+  const tuntityoForm = document.getElementById("tuntityoForm");
+
+  if (tuntityoForm.style.display === "none") {
+    tuntityoForm.style.display = "block";
+  } else {
+    tuntityoForm.style.display = "none";
+  }
+}
+
+function toggleLaskuForm() {
+  const laskuForm = document.getElementById("laskuForm");
+
+  if (laskuForm.style.display === "none") {
+    laskuForm.style.display = "block";
+  } else {
+    laskuForm.style.display = "none";
+  }
+}
+document.getElementById("formLasku").addEventListener("submit", function (e) {
+    e.preventDefault();
+    addLasku();
+});
+
+async function addLasku(){
+    const select = document.getElementById("tyokohdeSelect");
+    const tyokohde_id = document.getElementById("tyokohdeSelect").value;
+    const tyotyyppi = document.getElementById("tyotyyppiSelect").value;
+
+    if (!tyokohde_id || !tyotyyppi) {
+        alert("Valitse työkohde ja työtyyppi");
+        return;
+    }
+    await fetch("/lasku", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tyokohde_id, tyotyyppi })
+    });
+  document.getElementById("tyokohdeSelect").value = "";
+  document.getElementById("tyotyyppiSelect").value = "";
+  loadLasku();
+}
+
+
+async function loadLasku() {
+    const res = await fetch('/lasku');
+    const data = await res.json();
+    const tbody = document.querySelector('#laskuTable tbody');
+    tbody.innerHTML = '';
+
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${row.lasku_id}</td><td>${row.laskun_tila}</td>`;
+      tr.onclick = () => showInfo('laskuInfo', `Työkohde: ${row.tyokohde_id}, Työtyyppi: ${row.tyotyyppi}, yms tietoja tähän`);
+      tbody.appendChild(tr);
+    });
+}
+loadLasku();
+
 async function loadAsiakas() {
     const res = await fetch('/asiakas');
     const data = await res.json();
@@ -173,10 +320,10 @@ async function loadAsiakas() {
     tbody.innerHTML = '';
 
     data.forEach(row => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${row.asiakas_id}</td><td>${row.nimi}</td>`;
-    tr.onclick = () => showInfo('asiakasInfo', `Asiakas ${row.nimi}, Osoite: ${row.osoite}`);
-    tbody.appendChild(tr);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${row.asiakas_id}</td><td>${row.nimi}</td>`;
+      tr.onclick = () => showInfo('tyokohdeInfo', `Asiakas ${row.nimi}, Osoite: ${row.osoite}`);
+      tbody.appendChild(tr);
     });
 }
 loadAsiakas();
@@ -184,15 +331,30 @@ loadAsiakas();
 async function loadTyokohteet() {
   const res = await fetch('/tyokohde');
   const data = await res.json();
+
+  // asiakastabille
   const tbody = document.querySelector('#tyokohdeTable tbody');
   tbody.innerHTML = '';
-
   data.forEach(row => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${row.tyokohde_id}</td><td>${row.osoite}</td>`;
     tr.onclick = () => showInfo('tyokohdeInfo', `Työkohdenimi: ${row.nimi}, Asiakas: ${row.asiakas_id}, Osoite: ${row.osoite}`);
     tbody.appendChild(tr);
   });
+
+  // laskunlisäysformin optionit
+  const select = document.getElementById('tyokohdeSelect');
+  if (select) {
+    select.innerHTML = '<option value="">-- Valitse työkohde --</option>';
+
+    data.forEach(row => {
+      const option = document.createElement('option');
+      option.value = row.tyokohde_id;
+      option.textContent = `Osoite: ${row.osoite}, ID: ${row.tyokohde_id}, Asiakas: ${row.asiakas_id}`;
+      select.appendChild(option);
+    });
+  }
+
 }
 loadTyokohteet();
 
