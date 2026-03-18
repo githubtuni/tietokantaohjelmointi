@@ -167,6 +167,19 @@ th, td {
   </div>
 </div>
 
+<div id="tarvikeForm" class="form">
+  <h3>Lisää tarvike</h3>
+
+  <form id="formTarvike">
+    <input id="tarvike_id" placeholder="Tarvike ID"><br><br>
+    <input id="maara" placeholder="Määrä"><br><br>
+
+    <button type="submit" class="submitButton">
+      Lisää tarvike
+    </button>
+  </form>
+</div>
+
 <div id="asiakkaat" class="tab-content">
   
   <div id="tablesContainer">
@@ -245,7 +258,7 @@ function toggleTyokohdeForm() {
 }
 
 function toggleTarvikeForm() {
-  const tarvikeForm = document.getElementById("tarvikeForm");
+  const form = document.getElementById("tarvikeForm");
 
   if (form.style.display === "none") {
     form.style.display = "block";
@@ -263,6 +276,8 @@ function toggleTuntityoForm() {
     tuntityoForm.style.display = "none";
   }
 }
+
+let selectedLaskuId = null;
 
 function toggleLaskuForm() {
   const laskuForm = document.getElementById("laskuForm");
@@ -307,7 +322,13 @@ async function loadLasku() {
     data.forEach(row => {
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${row.lasku_id}</td><td>${row.laskun_tila}</td>`;
-      tr.onclick = () => showInfo('laskuInfo', `Työkohde: ${row.tyokohde_id}, Työtyyppi: ${row.tyotyyppi}, yms tietoja tähän`);
+      tr.onclick = () => {
+      selectedLaskuId = row.lasku_id;
+      showInfo('laskuInfo', `Valittu lasku: ${row.lasku_id}`);
+
+      document.querySelectorAll('#laskuTable tr').forEach(r => r.classList.remove('selected'));
+      tr.classList.add('selected');
+};
       tbody.appendChild(tr);
     });
 }
@@ -399,6 +420,62 @@ async function addTyokohde() {
 
   loadTyokohteet();
 }
+document.getElementById("formTuntityo").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  if (!selectedLaskuId) {
+    alert("Valitse ensin lasku!");
+    return;
+  }
+
+  const paivamaara = document.getElementById("paivamaara").value;
+  const tunnit = document.getElementById("tunnit").value;
+  const tyotyyppi_id = document.getElementById("tyotyyppi_id").value;
+  const alepros = document.getElementById("alepros").value;
+
+  await fetch("/tuntityo", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      lasku_id: selectedLaskuId,
+      paivamaara,
+      tunnit,
+      tyotyyppi_id,
+      alepros
+    })
+  });
+
+  alert("Tuntityö lisätty!");
+  document.getElementById("formTuntityo").reset();
+});
+
+document.getElementById("formTarvike").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  if (!selectedLaskuId) {
+    alert("Valitse ensin lasku!");
+    return;
+  }
+  const tarvike_id = document.getElementById("tarvike_id").value;
+  const maara = document.getElementById("maara").value;
+
+  await fetch("/lasku_tarvike", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      lasku_id: selectedLaskuId,
+      tarvike_id,
+      maara
+    })
+  });
+
+  alert("Tarvike lisätty!");
+  document.getElementById("formTarvike").reset();
+});
 
 </script>
 
