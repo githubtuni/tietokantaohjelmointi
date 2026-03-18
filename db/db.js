@@ -67,3 +67,20 @@ export async function addTyokohde(asiakas_id, nimi, osoite) {
   }
 
 } 
+export async function getLaskuById(id) {
+
+  const lasku = await pool.query(
+    'SELECT * FROM lasku WHERE lasku_id = $1',
+    [id]
+  );
+
+  const tuntityot = await pool.query(
+    'SELECT * FROM tuntityo WHERE lasku_id = $1',
+    [id]
+  );
+
+  return {
+    lasku: lasku.rows[0],
+    tuntityot: tuntityot.rows
+  };
+}
