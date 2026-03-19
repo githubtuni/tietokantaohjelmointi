@@ -96,8 +96,8 @@ th, td {
 <h1>Laskutusjärjestelmä</h1>
 
 <div class="tabs">
-  <button class="tab-button active" onclick="openTab('laskut')">Laskut</button>
-  <button class="tab-button" onclick="openTab('asiakkaat')">Asiakkaat</button>
+  <button class="tab-button active" onclick="openTab(event, 'laskut')">Laskut</button>
+  <button class="tab-button" onclick="openTab(event, 'asiakkaat')">Asiakkaat</button>
 </div>
 
 
@@ -115,10 +115,10 @@ th, td {
   <div id="laskuInfo" class="info">Lisätietoja klikkaamalla</div>
   <br>
     
-  <button onclick="toggleLaskuForm()">+ Luo laskupohja</button>
+  <button onclick="toggleForm('laskuForm')">+ Luo laskupohja</button>
   <button onclick="">+ Muokkaa laskua</button>
-  <button onclick="toggleTuntityoForm()">+ Lisää tuntityö</button>
-  <button onclick="toggleTarvikeForm()">+ Lisää tarvike</button>
+  <button onclick="toggleForm('tuntityoForm')">+ Lisää tuntityö</button>
+  <button onclick="toggleForm('tarvikeForm')">+ Lisää tarvike</button>
 
   <div id="laskuForm" class="form">
       <h3>Uusi laskupohja</h3>
@@ -207,7 +207,7 @@ th, td {
   <div id="tyokohdeInfo" class="info">Lisätietoja klikkaamalla</div>
   <br>
 
-  <button onclick="toggleTyokohdeForm()">+ Lisää asiakkaalle työkohde</button>
+  <button onclick="toggleForm('tyokohdeForm')">+ Lisää asiakkaalle työkohde</button>
       
   <div id="tyokohdeForm" class="form-box" style="display:none">
     <h3>Lisää uusi työkohde</h3>
@@ -230,7 +230,7 @@ th, td {
 
 
 <script>
-function openTab(tabId) {
+function openTab(event, tabId) {
     const tabs = document.querySelectorAll('.tab-content');
     const buttons = document.querySelectorAll('.tab-button');
 
@@ -245,49 +245,18 @@ function showInfo(infoId, text) {
     document.getElementById(infoId).textContent = text;
 }
 
-function toggleTyokohdeForm() {
+function toggleForm(id) {
+    const form = document.getElementById(id);
 
-  const form = document.getElementById("tyokohdeForm");
-
-  if (form.style.display === "none") {
-    form.style.display = "block";
-  } else {
-    form.style.display = "none";
-  }
-
-}
-
-function toggleTarvikeForm() {
-  const form = document.getElementById("tarvikeForm");
-
-  if (form.style.display === "none") {
-    form.style.display = "block";
-  } else {
-    form.style.display = "none";
-  }
-}
-
-function toggleTuntityoForm() {
-  const tuntityoForm = document.getElementById("tuntityoForm");
-
-  if (tuntityoForm.style.display === "none") {
-    tuntityoForm.style.display = "block";
-  } else {
-    tuntityoForm.style.display = "none";
-  }
+    if (getComputedStyle(form).display === "none") {
+      form.style.display = "block";
+    } else {
+      form.style.display = "none";
+    }
 }
 
 let selectedLaskuId = null;
 
-function toggleLaskuForm() {
-  const laskuForm = document.getElementById("laskuForm");
-
-  if (laskuForm.style.display === "none") {
-    laskuForm.style.display = "block";
-  } else {
-    laskuForm.style.display = "none";
-  }
-}
 document.getElementById("formLasku").addEventListener("submit", function (e) {
     e.preventDefault();
     addLasku();
