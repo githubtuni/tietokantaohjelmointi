@@ -145,17 +145,23 @@ th, td {
     <h3>Lisää uusi tuntityö</h3>
 
     <form id="formTuntityo">
-        <label for="laskuId">Laskun ID:</label><br>
-        <input type="number" min="0" id="laskuId" name="laskuId" placeholder="Laskun ID" required><br><br>
+        <label for="tuntityoLaskuIdLabel">Lasku ID: <span id="laskuIdTuntityo">--</span></label><br><br>
+        <input type="hidden" name="lasku_id" id="laskuIdTuntityoInput">
 
         <label for="paivamaara">Päivämäärä:</label><br>
         <input type="date" id="paivamaara" name="paivamaara" required><br><br>
 
         <label for="tunnit">Tunnit:</label><br>
-        <input type="number" id="tunnit" name="tunnit" step="0.01" placeholder="Tunnit" required><br><br>
+        <input type="number" id="tunnit" name="tunnit" step="1" placeholder="Tunnit" min="1" required><br><br>
 
-        <label for="tyotyyppi_id">Työtyypin ID:</label><br>
-        <input type="number" min="0" id="tyotyyppi_id" name="tyotyyppi_id" placeholder="Työtyypin ID" required><br><br>
+        <label for="tyotyyppi">Työtyyppi:</label><br>
+        <select id="tuntityoTyyppiSelect" required>
+          <option value="">-- Valitse työtyyppi --</option>
+          <option value="1">Suunnittelu</option>
+          <option value="2">Työ</option>
+          <option value="3">Aputyö</option>
+        </select>
+        <br><br>
 
         <label for="alepros">Alennusprosentti:</label><br>
         <input type="number" id="alepros" name="alepros" min="0" max="100" placeholder="Alennus %" value="0"><br><br>
@@ -170,10 +176,10 @@ th, td {
     <h3>Lisää tarvike</h3>
 
     <form id="formTarvike">
-      <label for="tarvikeSelect">Lasku ID: <span id="laskuIdTarvike">--</span></label><br><br>
-      <input type="hidden" name="lasku_id" id="laskuIdInput">
+      <label for="tarvikeSelectLaskuId">Lasku ID: <span id="laskuIdTarvike">--</span></label><br><br>
+      <input type="hidden" name="lasku_id" id="laskuIdTarvikeInput">
       <label for="tarvikeSelectLabel">Tarvike:</label><br>
-          <select id="tarvikeSelect" name="tarvike_id" required>
+          <select id="tarvikeSelect" name="tarvike_select" required>
               <option value="">-- Valitse tarvike --</option>
           </select><br><br>
       
@@ -181,7 +187,7 @@ th, td {
       <input id="maara" placeholder="Määrä"><br><br>
 
       <label for="alepros">Alennusprosentti:</label><br>
-      <input type="number" id="alepros" name="alepros" min="0" max="100" placeholder="Alennus %" value="0"><br><br>
+      <input type="number" id="alepros_tarvike" name="alepros" min="0" max="100" placeholder="Alennus %" value="0"><br><br>
 
       <button type="submit" class="submitButton">
         Lisää tarvike
@@ -311,9 +317,13 @@ async function loadLasku() {
           document.querySelectorAll('#laskuTable tr').forEach(r => r.classList.remove('selected'));
           tr.classList.add('selected');
 
-          const laskuSpan = document.getElementById('laskuIdTarvike');
-          laskuSpan.textContent = selectedLaskuId;
-          document.getElementById('laskuIdInput').value = selectedLaskuId;
+          const laskuIdTarvikeSpan = document.getElementById('laskuIdTarvike');
+          laskuIdTarvikeSpan.textContent = selectedLaskuId;
+          document.getElementById('laskuIdTarvikeInput').value = selectedLaskuId;
+
+          const laskuIdTuntityoSpan = document.getElementById('laskuIdTuntityo');
+          laskuIdTuntityoSpan.textContent = selectedLaskuId;
+          document.getElementById('laskuIdTuntityoInput').value = selectedLaskuId;
     };
       tbody.appendChild(tr);
     });
@@ -440,9 +450,10 @@ document.getElementById("formTuntityo").addEventListener("submit", async functio
     return;
   }
 
+  const lasku_id = document.getElementById("laskuIdTuntityoInput").value;
   const paivamaara = document.getElementById("paivamaara").value;
   const tunnit = document.getElementById("tunnit").value;
-  const tyotyyppi_id = document.getElementById("tyotyyppi_id").value;
+  const tyotyyppi_id = document.getElementById("tuntityoTyyppiSelect").value;
   const alepros = document.getElementById("alepros").value;
 
   await fetch("/tuntityo", {
@@ -451,7 +462,7 @@ document.getElementById("formTuntityo").addEventListener("submit", async functio
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      lasku_id: selectedLaskuId,
+      lasku_id,
       paivamaara,
       tunnit,
       tyotyyppi_id,
@@ -470,8 +481,11 @@ document.getElementById("formTarvike").addEventListener("submit", async function
     alert("Valitse ensin lasku!");
     return;
   }
-  const tarvike_id = document.getElementById("tarvike_id").value;
+
+  const tarvike_id = document.getElementById('tarvikeSelect').value;
+  const lasku_id = document.getElementById("laskuIdTarvikeInput").value;
   const maara = document.getElementById("maara").value;
+  const alepros = document.getElementById("alepros_tarvike").value;
 
   await fetch("/lasku_tarvike", {
     method: "POST",
@@ -479,9 +493,10 @@ document.getElementById("formTarvike").addEventListener("submit", async function
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      lasku_id: selectedLaskuId,
+      lasku_id,
       tarvike_id,
-      maara
+      maara,
+      alepros
     })
   });
 
