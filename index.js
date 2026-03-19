@@ -1,6 +1,15 @@
 import http from 'http';
 import fs from 'fs';
-import { getLasku, getAsiakas, getTyokohde, addTyokohde, addLasku, addTuntityo, getTarvikkeet} from './db/db.js';
+import { 
+    getLasku, 
+    getAsiakas, 
+    getTyokohde, 
+    addTyokohde, 
+    addLasku, 
+    addTuntityo, 
+    getTarvikkeet, 
+    addTarvikeToLasku
+} from './db/db.js';
 
 const hostname = '192.168.4.115';
 const port = 8031; //ryhmä 3 porttinumero
@@ -49,6 +58,25 @@ const server = http.createServer(async (req, res) => {
             res.statusCode = 500;
             res.end(JSON.stringify({error: "Database error" }));
         }
+    }
+
+    else if (req.url ==='/lasku_tarvike' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                await addTarvikeToLasku(data.lasku_id, data.tarvike_id, data.maara, data.alepros);
+                res.end('ok');
+            } catch (err) {
+                console.error(err);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: 'Server error' }));
+            }
+        });
     }
 
     else if (req.url === '/lasku' && req.method === 'GET') {
