@@ -8,7 +8,8 @@ import {
     addLasku, 
     addTuntityo, 
     getTarvikkeet, 
-    addTarvikeToLasku
+    addTarvikeToLasku,
+    addAsiakas
 } from './db/db.js';
 
 const hostname = '192.168.4.115';
@@ -109,10 +110,29 @@ const server = http.createServer(async (req, res) => {
         });
     }
 
-    else if (req.url === '/asiakas') {
+    else if (req.url === '/asiakas' && req.method === 'GET') {
         const customers = await getAsiakas();
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(customers));
+    }
+
+    else if (req.url === '/asiakas' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk;
+        });
+
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                await addAsiakas(data.nimi, data.osoite);
+                res.end('ok');
+            } catch (err) {
+                console.error(err);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: 'Server error' }));
+            }
+        });
     }
 
     else if (req.url === '/tyokohde' && req.method === 'GET') {
