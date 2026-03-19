@@ -34,6 +34,17 @@ export async function addLasku(tyokohde_id, tyotyyppi) {
 
 } 
 
+export async function addTuntityo(lasku_id, paivamaara, tunnit, tyotyyppi_id, alepros) {
+  try {
+    await pool.query(
+      "INSERT INTO tuntityo (lasku_id, paivamaara, tunnit, tyotyyppi_id, alepros) VALUES ($1,$2,$3,$4,$5)",
+      [lasku_id, paivamaara, tunnit, tyotyyppi_id, alepros]
+    );
+  } catch(err) {
+    console.error(err);
+  }
+}
+
 export async function getAsiakas() {
     try {
       const result = await pool.query('SELECT * FROM asiakas');
