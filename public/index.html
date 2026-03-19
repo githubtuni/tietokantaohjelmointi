@@ -200,45 +200,66 @@ th, td {
   
   <div id="tablesContainer">
     <table id="asiakasTable">
-        <thead>
-          <tr>
-            <th>Asiakas-ID</th>
-            <th>Nimi</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <thead>
+        <tr>
+          <th>Asiakas-ID</th>
+          <th>Nimi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
     <table id="tyokohdeTable">
-        <thead>
-          <tr>
-            <th>Työkohde-ID</th>
-            <th>Osoite</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <thead>
+        <tr>
+          <th>Työkohde-ID</th>
+          <th>Tyokohteen nimi</th>
+          <th>Osoite</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
   <div id="tyokohdeInfo" class="info">Lisätietoja klikkaamalla</div>
   <br>
 
   <button onclick="toggleForm('tyokohdeForm')">+ Lisää asiakkaalle työkohde</button>
-      
-  <div id="tyokohdeForm" class="form-box" style="display:none">
+  <button onclick="toggleForm('asiakasForm')">+ Lisää uusi asiakas</button>
+
+  <div id="tyokohdeForm" class="form">
     <h3>Lisää uusi työkohde</h3>
-    <input id="tyokohdeNimi" placeholder="Työkohteen nimi"><br>
-    <input id="tyokohdeOsoite" placeholder="Osoite"><br>
-    <input id="tyokohdeAsiakas" placeholder="Asiakas ID"><br>
-    <button onclick="addTyokohde()">Tallenna</button>
+
+    <form id="formTyokohde">
+      <label for="tyokohdeAsiakasSelect">Asiakas:</label><br>
+      <select id="tyokohdeAsiakasSelect" name="asiakas_id" required>
+        <option value="">-- Valitse asiakas --</option>
+      </select><br><br>
+
+      <label for="tyokohdeNimi">Työkohteen nimi:</label><br>
+      <input id="tyokohdeNimi" name="nimi" placeholder="Työkohteen nimi" required><br><br>
+
+      <label for="tyokohdeOsoite">Osoite:</label><br>
+      <input id="tyokohdeOsoite" name="osoite" placeholder="Osoite" required><br><br>
+
+      <button type="submit" class="submitButton">Tallenna</button>
+    </form>
   </div>
-  
-  <h3>Lisää uusi asiakas</h3>
 
-  <input id="nimi" placeholder="Nimi">
-  <input id="osoite" placeholder="Osoite">
+  <div id="asiakasForm" class="form">
+    <h3>Lisää uusi asiakas</h3>
 
-  <button onclick="addCustomer()">Lisää asiakas</button>
+    <form id="formAsiakas">
+      <label for="nimi">Nimi:</label><br>
+      <input id="nimi" name="nimi" placeholder="Nimi" required><br><br>
+
+      <label for="osoite">Osoite:</label><br>
+      <input id="osoite" name="osoite" placeholder="Osoite" required><br><br>
+
+      <button type="submit" class="submitButton">Lisää asiakas</button>
+    </form>
+  </div>
+
 </div>
 
  
@@ -248,6 +269,52 @@ th, td {
 <script>
 
 let selectedLaskuId = null;
+let selectedAsiakasId = null;
+let allTyokohteet = [];
+let allAsiakkaat = [];
+
+function selectAsiakas(asiakasId) {
+  const asiakas = allAsiakkaat.find(a => String(a.asiakas_id) === String(asiakasId));
+  if (!asiakas) return;
+
+  selectedAsiakasId = asiakas.asiakas_id;
+
+  showInfo('tyokohdeInfo', `Asiakas ${asiakas.nimi}, Osoite: ${asiakas.osoite}`);
+
+  document.querySelectorAll('#asiakasTable tbody tr').forEach(tr => {
+    if (tr.dataset.asiakasId === String(asiakas.asiakas_id)) {
+      tr.classList.add('selected');
+    } else {
+      tr.classList.remove('selected');
+    }
+  });
+
+  document.getElementById('tyokohdeAsiakasSelect').value = String(asiakas.asiakas_id);
+
+  renderTyokohteetForAsiakas(asiakas.asiakas_id);
+}
+
+function renderTyokohteetForAsiakas(asiakasId) {
+  const tbody = document.querySelector('#tyokohdeTable tbody');
+  tbody.innerHTML = '';
+
+  const filtered = allTyokohteet.filter(row => String(row.asiakas_id) === String(asiakasId));
+
+  filtered.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.tyokohde_id}</td><td>${row.nimi}</td><td>${row.osoite}</td>`;
+    tr.onclick = () => {
+      showInfo('tyokohdeInfo', `Työkohdenimi: ${row.nimi}, Asiakas: ${row.asiakas_id}, Osoite: ${row.osoite}`);
+    };
+    tbody.appendChild(tr);
+  });
+
+  if (filtered.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="2">Ei työkohteita</td>`;
+    tbody.appendChild(tr);
+  }
+}
 
 function openTab(event, tabId) {
     const tabs = document.querySelectorAll('.tab-content');
@@ -331,19 +398,41 @@ async function loadLasku() {
 loadLasku();
 
 async function loadAsiakas() {
-    const res = await fetch('/asiakas');
-    const data = await res.json();
-    const tbody = document.querySelector('#asiakasTable tbody');
-    tbody.innerHTML = '';
+  const res = await fetch('/asiakas');
+  const data = await res.json();
+
+  allAsiakkaat = data;
+
+  const tbody = document.querySelector('#asiakasTable tbody');
+  tbody.innerHTML = '';
+
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.dataset.asiakasId = row.asiakas_id;
+    tr.innerHTML = `<td>${row.asiakas_id}</td><td>${row.nimi}</td>`;
+
+    tr.onclick = () => {
+      selectAsiakas(row.asiakas_id);
+    };
+
+    tbody.appendChild(tr);
+  });
+
+  const select = document.getElementById('tyokohdeAsiakasSelect');
+  if (select) {
+    select.innerHTML = '<option value="">-- Valitse asiakas --</option>';
 
     data.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${row.asiakas_id}</td><td>${row.nimi}</td>`;
-      tr.onclick = () => showInfo('tyokohdeInfo', `Asiakas ${row.nimi}, Osoite: ${row.osoite}`);
-      tbody.appendChild(tr);
+      const option = document.createElement('option');
+      option.value = row.asiakas_id;
+      option.textContent = `${row.nimi} (ID: ${row.asiakas_id})`;
+      select.appendChild(option);
     });
+  }
 }
 loadAsiakas();
+
+
 
 async function loadTarvikkeet() {
   const res = await fetch('/tarvike');
@@ -375,17 +464,25 @@ async function loadTyokohteet() {
   const res = await fetch('/tyokohde');
   const data = await res.json();
 
-  // asiakastabille
+  allTyokohteet = data;
+
   const tbody = document.querySelector('#tyokohdeTable tbody');
   tbody.innerHTML = '';
-  data.forEach(row => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${row.tyokohde_id}</td><td>${row.osoite}</td>`;
-    tr.onclick = () => showInfo('tyokohdeInfo', `Työkohdenimi: ${row.nimi}, Asiakas: ${row.asiakas_id}, Osoite: ${row.osoite}`);
-    tbody.appendChild(tr);
-  });
 
-  // laskunlisäysformin optionit
+  if (selectedAsiakasId) {
+    renderTyokohteetForAsiakas(selectedAsiakasId);
+  } else {
+    // show all if no customer selected yet
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${row.tyokohde_id}</td><td>${row.nimi}</td><td>${row.osoite}</td>`;
+      tr.onclick = () => {
+        showInfo('tyokohdeInfo', `Työkohdenimi: ${row.nimi}, Asiakas: ${row.asiakas_id}, Osoite: ${row.osoite}`);
+      };
+      tbody.appendChild(tr);
+    });
+  }
+
   const select = document.getElementById('tyokohdeSelect');
   if (select) {
     select.innerHTML = '<option value="">-- Valitse työkohde --</option>';
@@ -397,19 +494,12 @@ async function loadTyokohteet() {
       select.appendChild(option);
     });
   }
-
 }
 loadTyokohteet();
 
 async function addCustomer() {
-
   const nimi = document.getElementById("nimi").value;
   const osoite = document.getElementById("osoite").value;
-
-  if (nimi === "" || osoite === "") {
-    alert("Täytä nimi ja osoite");
-    return;
-  }
 
   await fetch("/asiakas", {
     method: "POST",
@@ -417,31 +507,37 @@ async function addCustomer() {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      nimi: nimi,
-      osoite: osoite
+      nimi,
+      osoite
     })
   });
-  document.getElementById("nimi").value = "";
-  document.getElementById("osoite").value = "";
+
+  document.getElementById("formAsiakas").reset();
   loadAsiakas();
 }
-async function addTyokohde() {
 
+async function addTyokohde() {
   const nimi = document.getElementById("tyokohdeNimi").value;
   const osoite = document.getElementById("tyokohdeOsoite").value;
-  const asiakas_id = document.getElementById("tyokohdeAsiakas").value;
+  const asiakas_id = document.getElementById("tyokohdeAsiakasSelect").value;
 
   await fetch("/tyokohde", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nimi, osoite, asiakas_id })
   });
-  document.getElementById("tyokohdeNimi").value = "";
-  document.getElementById("tyokohdeOsoite").value = "";
-  document.getElementById("tyokohdeAsiakas").value = ""
+  
+  document.getElementById("formTyokohde").reset();
 
   loadTyokohteet();
 }
+
+document.getElementById('tyokohdeAsiakasSelect').addEventListener('change', function () {
+  if (this.value) {
+    selectAsiakas(this.value);
+  }
+});
+
 document.getElementById("formTuntityo").addEventListener("submit", async function(e) {
   e.preventDefault();
 
@@ -502,6 +598,16 @@ document.getElementById("formTarvike").addEventListener("submit", async function
 
   alert("Tarvike lisätty!");
   document.getElementById("formTarvike").reset();
+});
+
+document.getElementById("formAsiakas").addEventListener("submit", function (e) {
+  e.preventDefault();
+  addCustomer();
+});
+
+document.getElementById("formTyokohde").addEventListener("submit", function (e) {
+  e.preventDefault();
+  addTyokohde();
 });
 
 </script>
