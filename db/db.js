@@ -10,6 +10,17 @@ const pool = new Pool({
   port: 5432,
 })
 
+export async function addTarvikeToLasku(lasku_id, tarvike_id, kpl, alepros) {
+    try {
+      await pool.query(
+        "INSERT INTO lasku_tarvike (lasku_id, tarvike_id, kpl, alepros) VALUES ($1,$2,$3,$4)",
+        [lasku_id, tarvike_id, kpl, alepros]
+      );
+    } catch(err) {
+      console.error(err);
+    }
+}
+
 export async function getTarvikkeet() {
     try {
       const result = await pool.query('SELECT * from tarvike');
