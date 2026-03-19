@@ -165,19 +165,29 @@ th, td {
         </button>
     </form>
   </div>
-</div>
 
-<div id="tarvikeForm" class="form">
-  <h3>Lisää tarvike</h3>
+  <div id="tarvikeForm" class="form">
+    <h3>Lisää tarvike</h3>
 
-  <form id="formTarvike">
-    <input id="tarvike_id" placeholder="Tarvike ID"><br><br>
-    <input id="maara" placeholder="Määrä"><br><br>
+    <form id="formTarvike">
+      <label for="tarvikeSelect">Lasku ID: <span id="laskuIdTarvike">--</span></label><br><br>
+      <input type="hidden" name="lasku_id" id="laskuIdInput">
+      <label for="tarvikeSelectLabel">Tarvike:</label><br>
+          <select id="tarvikeSelect" name="tarvike_id" required>
+              <option value="">-- Valitse tarvike --</option>
+          </select><br><br>
+      
+      <label>Yksikkö: <span id="tarvikeYksikko">--</span></label><br><br>
+      <input id="maara" placeholder="Määrä"><br><br>
 
-    <button type="submit" class="submitButton">
-      Lisää tarvike
-    </button>
-  </form>
+      <label for="alepros">Alennusprosentti:</label><br>
+      <input type="number" id="alepros" name="alepros" min="0" max="100" placeholder="Alennus %" value="0"><br><br>
+
+      <button type="submit" class="submitButton">
+        Lisää tarvike
+      </button>
+    </form>
+  </div>
 </div>
 
 <div id="asiakkaat" class="tab-content">
@@ -230,6 +240,9 @@ th, td {
 
 
 <script>
+
+let selectedLaskuId = null;
+
 function openTab(event, tabId) {
     const tabs = document.querySelectorAll('.tab-content');
     const buttons = document.querySelectorAll('.tab-button');
@@ -255,7 +268,6 @@ function toggleForm(id) {
     }
 }
 
-let selectedLaskuId = null;
 
 document.getElementById("formLasku").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -292,12 +304,17 @@ async function loadLasku() {
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${row.lasku_id}</td><td>${row.laskun_tila}</td>`;
       tr.onclick = () => {
-      selectedLaskuId = row.lasku_id;
-      showInfo('laskuInfo', `Valittu lasku: ${row.lasku_id}`);
+          selectedLaskuId = row.lasku_id;
 
-      document.querySelectorAll('#laskuTable tr').forEach(r => r.classList.remove('selected'));
-      tr.classList.add('selected');
-};
+          showInfo('laskuInfo', `Valittu lasku: ${row.lasku_id}`);
+
+          document.querySelectorAll('#laskuTable tr').forEach(r => r.classList.remove('selected'));
+          tr.classList.add('selected');
+
+          const laskuSpan = document.getElementById('laskuIdTarvike');
+          laskuSpan.textContent = selectedLaskuId;
+          document.getElementById('laskuIdInput').value = selectedLaskuId;
+    };
       tbody.appendChild(tr);
     });
 }
@@ -317,6 +334,32 @@ async function loadAsiakas() {
     });
 }
 loadAsiakas();
+
+async function loadTarvikkeet() {
+  const res = await fetch('/tarvike');
+  const data = await res.json();
+
+  const select = document.getElementById('tarvikeSelect');
+  if (select) {
+    select.innerHTML = '<option value=""> -- Valitse tarvike --</option>';
+    
+    data.forEach(row => {
+      const option = document.createElement('option');
+      const id = row.tarvike_id;
+      const nimi = row.nimi;
+      option.value = id;
+      option.dataset.yksikko = row.yksikko;
+      option.textContent = `ID: ${id}, Nimi: ${nimi}`;
+      select.appendChild(option);
+    })
+  }
+  select.addEventListener('change', function() {
+    const selectedOption = this.selectedOptions[0];
+    const yksikko = selectedOption ? selectedOption.dataset.yksikko : '--';
+    document.getElementById('tarvikeYksikko').textContent = yksikko;
+  });
+}
+loadTarvikkeet();
 
 async function loadTyokohteet() {
   const res = await fetch('/tyokohde');

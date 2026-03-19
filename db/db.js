@@ -10,6 +10,16 @@ const pool = new Pool({
   port: 5432,
 })
 
+export async function getTarvikkeet() {
+    try {
+      const result = await pool.query('SELECT * from tarvike');
+      return result.rows;
+    } catch(error) {
+      console.error(error);
+      return [];
+    }
+}
+
 export async function getLasku() {
     try {
       const result = await pool.query('SELECT * FROM lasku');
