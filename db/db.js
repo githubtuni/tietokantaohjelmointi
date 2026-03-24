@@ -56,7 +56,16 @@ export async function addLasku(tyokohde_id, tyotyyppi) {
 
   try {
     await pool.query(
-      "INSERT INTO lasku (tyokohde_id, tyotyyppi, laskun_tila) VALUES ($1,$2,'kesken')",
+      `INSERT INTO lasku (
+        tyokohde_id, 
+        tyotyyppi, 
+        laskun_tila, 
+        maksettu, 
+        viivastyskorko, 
+        laskutuslisa, 
+        muistutusnumero
+        ) 
+        VALUES ($1,$2,'Kesken',false,0,0,0)`,
       [tyokohde_id, tyotyyppi]
     );
 
