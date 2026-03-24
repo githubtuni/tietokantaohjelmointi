@@ -15,7 +15,8 @@ CREATE TABLE tyokohde (
 CREATE TABLE lasku (
     lasku_id SERIAL PRIMARY KEY,
     tyokohde_id INTEGER NOT NULL,
-    pvm DATE,
+    lahetys_pvm DATE,
+    maksu_pvm DATE,
     laskun_tila VARCHAR(100),
     tyotyyppi VARCHAR(100),
     erapaiva DATE,
