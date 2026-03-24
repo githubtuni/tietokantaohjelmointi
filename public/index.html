@@ -107,6 +107,8 @@ th, td {
       <tr>
         <th>Lasku-ID</th>
         <th>Tila</th>
+        <th>Maksettu</th>
+        <th>Eräpäivä</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -116,7 +118,7 @@ th, td {
   <br>
     
   <button onclick="toggleForm('laskuForm')">+ Luo laskupohja</button>
-  <button onclick="">+ Muokkaa laskua</button>
+  <button onclick="editLasku()">+ Muokkaa laskua</button>
   <button onclick="toggleForm('tuntityoForm')">+ Lisää tuntityö</button>
   <button onclick="toggleForm('tarvikeForm')">+ Lisää tarvike</button>
 
@@ -137,6 +139,40 @@ th, td {
 
           <button type="submit" class="submitButton">
               Lisää laskupohja
+          </button>
+      </form>
+  </div>
+
+  <div id="muokkausForm" class="form">
+      <h3>Muokkaa laskua</h3>
+
+      <form id="formLaskuMuokkaus">
+          <label>Lasku ID: <span id="laskuIdMuokkaus">--</span></label><br><br>
+
+          <label for="tyokohdeSelectMuokkaus">Työkohde:</label><br>
+          <select id="tyokohdeSelectMuokkaus" name="tyokohde_id">
+              <!-- Options populated dynamically -->
+          </select><br><br>
+
+          <label for="laskunTilaSelect">Laskun tila:</label><br>
+          <select id="laskunTilaSelect">
+              <option value="Kesken">Kesken</option>
+              <option value="Valmis">Valmis</option>
+          </select><br><br>
+
+          <label>Työtyyppi: <span id="tyotyyppiMuokkaus"></span></label><br><br>
+
+          <label for="erapaivaInput">Eräpäivä:</label><br>
+          <input type="date" id="erapaivaInput" name="erapaiva"><br><br>
+
+          <label for="laskuMaksettu">Lasku maksettu:</label><br>
+          <select id="laskuMaksettuSelect">
+              <option value="false">Ei</option>
+              <option value="true">Kyllä</option>
+          </select><br><br>
+
+          <button type="submit" class="submitButton">
+              Tallenna muutokset
           </button>
       </form>
   </div>
@@ -272,6 +308,47 @@ let selectedLaskuId = null;
 let selectedAsiakasId = null;
 let allTyokohteet = [];
 let allAsiakkaat = [];
+let laskut = new Map()
+
+function editLasku() {
+    if(!selectedLaskuId) {
+      alert("Valitse ensin lasku!")
+      return;
+    }
+
+    toggleForm("muokkausForm");
+    populateLaskuData();
+}
+
+function populateLaskuData() {
+    if (!selectedLaskuId) {
+        alert("Valitse ensin lasku.");
+        return;
+    }
+
+    const laskuData = laskut.get(Number(selectedLaskuId));
+    const tyokohdeSelect = document.getElementById("tyokohdeSelectMuokkaus");
+    // Clear select before every function call to not reappend same data.
+    tyokohdeSelect.innerHTML = "";
+
+    allTyokohteet.forEach(tyokohde => {
+      const option = document.createElement('option');
+      option.value = tyokohde.asiakas_id;
+      option.textContent = `Osoite: ${tyokohde.osoite}, ID: ${tyokohde.tyokohde_id}, Asiakas: ${tyokohde.asiakas_id}`;
+
+      if (tyokohde.asiakas_id === laskuData.tyokohde_id) {
+          option.selected = true;
+      }
+
+      tyokohdeSelect.appendChild(option);
+    });
+
+    document.getElementById("laskuIdMuokkaus").textContent = selectedLaskuId;
+    document.getElementById("laskunTilaSelect").value = laskuData.laskun_tila ?? "Kesken";
+    document.getElementById("erapaivaInput").value = laskuData.erapaiva ?? "";
+    document.getElementById("laskuMaksettuSelect").value = laskuData.maksettu ?? false;
+    document.getElementById("tyotyyppiMuokkaus").textContent = laskuData.tyotyyppi ?? "--";
+}
 
 function selectAsiakas(asiakasId) {
   const asiakas = allAsiakkaat.find(a => String(a.asiakas_id) === String(asiakasId));
@@ -363,19 +440,38 @@ async function addLasku(){
     });
   document.getElementById("tyokohdeSelect").value = "";
   document.getElementById("tyotyyppiSelect").value = "";
-  loadLasku();
+  loadLaskut();
 }
 
 
-async function loadLasku() {
+async function loadLaskut() {
     const res = await fetch('/lasku');
     const data = await res.json();
     const tbody = document.querySelector('#laskuTable tbody');
     tbody.innerHTML = '';
 
     data.forEach(row => {
+      laskut.set(row.lasku_id, {
+        ed_lasku_id: row.ed_lasku_id,
+        erapaiva: row.erapaiva,
+        laskun_tila: row.laskun_tila,
+        laskutuslisa: row.laskutuslisa,
+        maksettu: row.maksettu,
+        muistutusnumero: row.muistutusnumero,
+        maksu_pvm: row.maksu_pvm,
+        lahetys_pvm: row.lahetys_pvm,
+        tyokohde_id: row.tyokohde_id,
+        tyotyyppi: row.tyotyyppi,
+        viivastyskorko: row.viivastyskorko
+      });
+
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${row.lasku_id}</td><td>${row.laskun_tila}</td>`;
+      tr.innerHTML = `
+        <td>${row.lasku_id}</td>
+        <td>${row.laskun_tila}</td>
+        <td>${row.maksettu ? "Kyllä" : "Ei"}</td>
+        <td>${row.erapaiva ? row.erapaiva : "Puuttuu"}</td>`;
+
       tr.onclick = () => {
           selectedLaskuId = row.lasku_id;
 
@@ -391,11 +487,15 @@ async function loadLasku() {
           const laskuIdTuntityoSpan = document.getElementById('laskuIdTuntityo');
           laskuIdTuntityoSpan.textContent = selectedLaskuId;
           document.getElementById('laskuIdTuntityoInput').value = selectedLaskuId;
+
+          const laskuIdMuokkausSpan = document.getElementById("laskuIdMuokkaus");
+          laskuIdMuokkausSpan.textContent = selectedLaskuId;
+          populateLaskuData();
     };
       tbody.appendChild(tr);
     });
 }
-loadLasku();
+loadLaskut();
 
 async function loadAsiakas() {
   const res = await fetch('/asiakas');
