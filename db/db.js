@@ -136,3 +136,22 @@ export async function getLaskuById(id) {
     tuntityot: tuntityot.rows
   };
 }
+
+export async function getTuntityotByLasku(lasku_id) {
+  const result = await pool.query(
+    "SELECT * FROM tuntityo WHERE lasku_id = $1",
+    [lasku_id]
+  );
+  return result.rows;
+}
+
+export async function getTarvikkeetByLasku(lasku_id) {
+  const result = await pool.query(
+    `SELECT t.nimi, lt.maara 
+     FROM lasku_tarvike lt
+     JOIN tarvike t ON t.tarvike_id = lt.tarvike_id
+     WHERE lt.lasku_id = $1`,
+    [lasku_id]
+  );
+  return result.rows;
+}
