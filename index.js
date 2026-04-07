@@ -9,7 +9,8 @@ import {
     addTuntityo, 
     getTarvikkeet, 
     addTarvikeToLasku,
-    addAsiakas
+    addAsiakas,
+    updateLasku
 } from './db/db.js';
 
 const hostname = '192.168.4.115';
@@ -106,6 +107,32 @@ const server = http.createServer(async (req, res) => {
                 console.error(err);
                 res.statusCode = 500;
                 res.end(JSON.stringify({ error: 'Server error' }));
+            }
+        });
+    }
+
+    else if (req.url === '/lasku_update' && req.method === 'POST') {
+        let body = ''
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                await updateLasku(
+                    data.lasku_id, 
+                    data.tyokohde_id, 
+                    data.laskun_tila,
+                    data.erapaiva,
+                    data.maksettu,
+                    data.maksu_pvm
+                )
+                res.end('ok');
+            } catch(error) {
+                console.error(error);
+                res.statusCode = 500;
+                res.end(JSON.stringify({error: 'Server error'}));
             }
         });
     }
