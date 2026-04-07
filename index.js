@@ -10,7 +10,11 @@ import {
     getTarvikkeet, 
     addTarvikeToLasku,
     addAsiakas,
-    updateLasku
+    updateLasku,
+    getLaskuFull,
+    getTarvikkeetFull,
+    getTuntityotFull,
+    laskeLasku
 } from './db/db.js';
 
 const hostname = '192.168.4.115';
@@ -133,6 +137,44 @@ const server = http.createServer(async (req, res) => {
                 console.error(error);
                 res.statusCode = 500;
                 res.end(JSON.stringify({error: 'Server error'}));
+            }
+        });
+    }
+
+    else if (req.url === '/tuntityolasku_by_id' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                const lasku_id = data.lasku_id;
+
+                if (!lasku_id) {
+                    res.statusCode = 400;
+                    res.end(JSON.stringify({ error: 'Missing lasku_id' }));
+                    return;
+                }
+
+                const lasku = await getLaskuFull(lasku_id);
+                const tuntityot = await getTuntityotFull(lasku_id);
+                const tarvikkeet = await getTarvikkeetFull(lasku_id);
+                const totals = laskeLasku(tuntityot, tarvikkeet);
+
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                    lasku_id,
+                    lasku,
+                    tuntityot,
+                    tarvikkeet,
+                    totals
+                }));
+            } catch (error) {
+                console.error(error);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: 'Server error' }));
             }
         });
     }
