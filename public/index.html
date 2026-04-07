@@ -171,6 +171,11 @@ th, td {
               <option value="true">Kyllä</option>
           </select><br><br>
 
+          <div id="maksuPvmContainer" style="display:none;">
+              <label for="maksuPvmInput">Laskun maksupäivämäärä:</label><br>
+              <input type="date" id="maksuPvmInput" name="maksu_pvm"><br><br>
+          </div>
+
           <button type="submit" class="submitButton">
               Tallenna muutokset
           </button>
@@ -310,6 +315,54 @@ let allTyokohteet = [];
 let allAsiakkaat = [];
 let laskut = new Map()
 
+function toggleMaksuPvmField() {
+  const maksettu = document.getElementById("laskuMaksettuSelect").value;
+  const container = document.getElementById("maksuPvmContainer");
+
+  if (maksettu === "true") {
+    container.style.display = "block";
+  } else {
+    container.style.display = "none";
+    document.getElementById("maksuPvmInput").value = "";
+  }
+}
+
+async function updateLasku() {
+  if (!selectedLaskuId) {
+    alert("Valitse ensin lasku!");
+    return;
+  }
+
+  const lasku_id = selectedLaskuId;
+  const tyokohde_id = document.getElementById("tyokohdeSelectMuokkaus").value;
+  const laskun_tila = document.getElementById("laskunTilaSelect").value;
+  const erapaivaRaw = document.getElementById("erapaivaInput").value;
+  const maksettuRaw = document.getElementById("laskuMaksettuSelect").value;
+  const maksuPvmRaw = document.getElementById("maksuPvmInput").value;
+
+  const erapaiva = erapaivaRaw ? erapaivaRaw : null;
+  const maksettu = maksettuRaw === "true";
+  const maksu_pvm = maksuPvmRaw ? maksuPvmRaw : null;
+
+  await fetch("/lasku_update", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      lasku_id,
+      tyokohde_id,
+      laskun_tila,
+      erapaiva,
+      maksettu,
+      maksu_pvm
+    })
+  });
+
+  alert("Lasku päivitetty!");
+  loadLaskut();
+}
+
 function editLasku() {
     if(!selectedLaskuId) {
       alert("Valitse ensin lasku!")
@@ -336,7 +389,7 @@ function populateLaskuData() {
       option.value = tyokohde.asiakas_id;
       option.textContent = `Osoite: ${tyokohde.osoite}, ID: ${tyokohde.tyokohde_id}, Asiakas: ${tyokohde.asiakas_id}`;
 
-      if (tyokohde.asiakas_id === laskuData.tyokohde_id) {
+      if (tyokohde.tyokohde_id === laskuData.tyokohde_id) {
           option.selected = true;
       }
 
@@ -345,9 +398,20 @@ function populateLaskuData() {
 
     document.getElementById("laskuIdMuokkaus").textContent = selectedLaskuId;
     document.getElementById("laskunTilaSelect").value = laskuData.laskun_tila ?? "Kesken";
-    document.getElementById("erapaivaInput").value = laskuData.erapaiva ?? "";
-    document.getElementById("laskuMaksettuSelect").value = laskuData.maksettu ?? false;
+    document.getElementById("erapaivaInput").value = formatDateForInput(laskuData.erapaiva);
+    document.getElementById("laskuMaksettuSelect").value = String(laskuData.maksettu ?? false);
+    document.getElementById("maksuPvmInput").value = formatDateForInput(laskuData.maksu_pvm);
     document.getElementById("tyotyyppiMuokkaus").textContent = laskuData.tyotyyppi ?? "--";
+    toggleMaksuPvmField();
+}
+
+function formatDateForInput(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  // Adjust for local time offset
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
 function selectAsiakas(asiakasId) {
@@ -470,7 +534,7 @@ async function loadLaskut() {
         <td>${row.lasku_id}</td>
         <td>${row.laskun_tila}</td>
         <td>${row.maksettu ? "Kyllä" : "Ei"}</td>
-        <td>${row.erapaiva ? row.erapaiva : "Puuttuu"}</td>`;
+        <td>${row.erapaiva ? formatDateForInput(row.erapaiva) : "Puuttuu"}</td>`;
 
       tr.onclick = () => {
           selectedLaskuId = row.lasku_id;
@@ -708,6 +772,13 @@ document.getElementById("formAsiakas").addEventListener("submit", function (e) {
 document.getElementById("formTyokohde").addEventListener("submit", function (e) {
   e.preventDefault();
   addTyokohde();
+});
+
+document.getElementById("laskuMaksettuSelect").addEventListener("change", toggleMaksuPvmField);
+
+document.getElementById("formLaskuMuokkaus").addEventListener("submit", function (e) {
+  e.preventDefault();
+  updateLasku();
 });
 
 </script>
