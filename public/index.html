@@ -96,13 +96,14 @@ th, td {
 <h1>Laskutusjärjestelmä</h1>
 
 <div class="tabs">
-  <button class="tab-button active" onclick="openTab(event, 'laskut')">Laskut</button>
+  <button class="tab-button active" onclick="openTab(event, 'keskeneraisetLaskut')">Keskeneräiset laskut</button>
+  <button class="tab-button" onclick="openTab(event, 'valmiitLaskut')">Valmiit laskut</button>
   <button class="tab-button" onclick="openTab(event, 'asiakkaat')">Asiakkaat</button>
 </div>
 
 
-<div id="laskut" class="tab-content active">
-  <table id="laskuTable">
+<div id="keskeneraisetLaskut" class="tab-content active">
+  <table id="keskeneraisetLaskutTable">
     <thead>
       <tr>
         <th>Lasku-ID</th>
@@ -237,6 +238,20 @@ th, td {
   </div>
 </div>
 
+<div id="valmiitLaskut" class="tab-content">
+  <table id="valmiitLaskutTable">
+    <thead>
+      <tr>
+        <th>Lasku-ID</th>
+        <th>Tila</th>
+        <th>Maksettu</th>
+        <th>Eräpäivä</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
 <div id="asiakkaat" class="tab-content">
   
   <div id="tablesContainer">
@@ -360,6 +375,7 @@ async function updateLasku() {
   });
 
   alert("Lasku päivitetty!");
+
   loadLaskut();
 }
 
@@ -386,7 +402,7 @@ function populateLaskuData() {
 
     allTyokohteet.forEach(tyokohde => {
       const option = document.createElement('option');
-      option.value = tyokohde.asiakas_id;
+      option.value = tyokohde.tyokohde_id;
       option.textContent = `Osoite: ${tyokohde.osoite}, ID: ${tyokohde.tyokohde_id}, Asiakas: ${tyokohde.asiakas_id}`;
 
       if (tyokohde.tyokohde_id === laskuData.tyokohde_id) {
@@ -461,11 +477,38 @@ function openTab(event, tabId) {
     const tabs = document.querySelectorAll('.tab-content');
     const buttons = document.querySelectorAll('.tab-button');
 
+    // Hide all tabs.
     tabs.forEach(tab => tab.classList.remove('active'));
     buttons.forEach(btn => btn.classList.remove('active'));
 
+    // Show selected tab.
     document.getElementById(tabId).classList.add('active');
     event.target.classList.add('active');
+
+    // Clear lasku if tab is changed.
+    selectedLaskuId = null;
+
+    // Clear highlighted rows if lasku selected.
+    document.querySelectorAll('#keskeneraisetLaskutTable tr, #valmiitLaskutTable tr').forEach(r => r.classList.remove('selected'));
+
+    // Hide all forms on tab switch.
+    document.querySelectorAll('.form').forEach(f => f.style.display = 'none');
+
+    showInfo('laskuInfo', 'Lisätietoja klikkaamalla');
+
+    // Clear all lasku ID spans in forms.
+    const laskuSpans = ['laskuIdMuokkaus', 'laskuIdTuntityo', 'laskuIdTarvike'];
+    laskuSpans.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '--';
+    });
+
+    // Also clear hidden input values in forms.
+    const laskuInputs = ['laskuIdTuntityoInput', 'laskuIdTarvikeInput'];
+    laskuInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
 }
 
 function showInfo(infoId, text) {
@@ -511,52 +554,57 @@ async function addLasku(){
 async function loadLaskut() {
     const res = await fetch('/lasku');
     const data = await res.json();
-    const tbody = document.querySelector('#laskuTable tbody');
-    tbody.innerHTML = '';
+
+    const keskeneraisetTbody = document.querySelector('#keskeneraisetLaskutTable tbody');
+    const valmiitTbody = document.querySelector('#valmiitLaskutTable tbody');
+    keskeneraisetTbody.innerHTML = '';
+    valmiitTbody.innerHTML = '';
 
     data.forEach(row => {
-      laskut.set(row.lasku_id, {
-        ed_lasku_id: row.ed_lasku_id,
-        erapaiva: row.erapaiva,
-        laskun_tila: row.laskun_tila,
-        laskutuslisa: row.laskutuslisa,
-        maksettu: row.maksettu,
-        muistutusnumero: row.muistutusnumero,
-        maksu_pvm: row.maksu_pvm,
-        lahetys_pvm: row.lahetys_pvm,
-        tyokohde_id: row.tyokohde_id,
-        tyotyyppi: row.tyotyyppi,
-        viivastyskorko: row.viivastyskorko
-      });
+        laskut.set(row.lasku_id, {
+            ed_lasku_id: row.ed_lasku_id,
+            erapaiva: row.erapaiva,
+            laskun_tila: row.laskun_tila,
+            laskutuslisa: row.laskutuslisa,
+            maksettu: row.maksettu,
+            muistutusnumero: row.muistutusnumero,
+            maksu_pvm: row.maksu_pvm,
+            lahetys_pvm: row.lahetys_pvm,
+            tyokohde_id: row.tyokohde_id,
+            tyotyyppi: row.tyotyyppi,
+            viivastyskorko: row.viivastyskorko
+        });
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${row.lasku_id}</td>
-        <td>${row.laskun_tila}</td>
-        <td>${row.maksettu ? "Kyllä" : "Ei"}</td>
-        <td>${row.erapaiva ? formatDateForInput(row.erapaiva) : "Puuttuu"}</td>`;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${row.lasku_id}</td>
+            <td>${row.laskun_tila}</td>
+            <td>${row.maksettu ? "Kyllä" : "Ei"}</td>
+            <td>${row.erapaiva ? formatDateForInput(row.erapaiva) : "Puuttuu"}</td>`;
 
-      tr.onclick = () => {
-          selectedLaskuId = row.lasku_id;
+        tr.onclick = () => {
+            selectedLaskuId = row.lasku_id;
 
-          showInfo('laskuInfo', `Valittu lasku: ${row.lasku_id}`);
+            showInfo('laskuInfo', `Valittu lasku: ${selectedLaskuId}`);
 
-          document.querySelectorAll('#laskuTable tr').forEach(r => r.classList.remove('selected'));
-          tr.classList.add('selected');
+            // Remove previous selection from all tables
+            document.querySelectorAll('#keskeneraisetLaskutTable tr, #valmiitLaskutTable tr').forEach(r => r.classList.remove('selected'));
+            tr.classList.add('selected');
 
-          const laskuIdTarvikeSpan = document.getElementById('laskuIdTarvike');
-          laskuIdTarvikeSpan.textContent = selectedLaskuId;
-          document.getElementById('laskuIdTarvikeInput').value = selectedLaskuId;
+            document.getElementById('laskuIdTarvike').textContent = selectedLaskuId;
+            document.getElementById('laskuIdTarvikeInput').value = selectedLaskuId;
+            document.getElementById('laskuIdTuntityo').textContent = selectedLaskuId;
+            document.getElementById('laskuIdTuntityoInput').value = selectedLaskuId;
+            document.getElementById("laskuIdMuokkaus").textContent = selectedLaskuId;
+            populateLaskuData();
+        };
 
-          const laskuIdTuntityoSpan = document.getElementById('laskuIdTuntityo');
-          laskuIdTuntityoSpan.textContent = selectedLaskuId;
-          document.getElementById('laskuIdTuntityoInput').value = selectedLaskuId;
-
-          const laskuIdMuokkausSpan = document.getElementById("laskuIdMuokkaus");
-          laskuIdMuokkausSpan.textContent = selectedLaskuId;
-          populateLaskuData();
-    };
-      tbody.appendChild(tr);
+        // Append row to the correct table
+        if (row.laskun_tila === "Kesken") {
+            keskeneraisetTbody.appendChild(tr);
+        } else if (row.laskun_tila === "Valmis") {
+            valmiitTbody.appendChild(tr);
+        }
     });
 }
 loadLaskut();
