@@ -250,6 +250,12 @@ th, td {
     </thead>
     <tbody></tbody>
   </table>
+  <br>
+
+  <button onclick="createMuistutusmaksu()">+ Luo muistutusmaksu</button>
+  <button onclick="createRaporttiR2()">+ Raportti R2: Tuntityölasku</button>
+
+  <div id="r2ReportContainer" class="info" style="display:none; margin-top:15px;"></div>
 </div>
 
 <div id="asiakkaat" class="tab-content">
@@ -329,6 +335,91 @@ let selectedAsiakasId = null;
 let allTyokohteet = [];
 let allAsiakkaat = [];
 let laskut = new Map()
+
+function createMuistutusmaksu() {
+    if (!selectedLaskuId) {
+        alert("Valitse ensin lasku!");
+        return;
+    }
+    alert("Muistutusmaksu luotu laskulle ID: " + selectedLaskuId);
+    // TODO: create muistutusmaksu
+}
+
+async function createRaporttiR2() {
+    if (!selectedLaskuId) {
+        alert("Valitse ensin lasku!");
+        return;
+    }
+
+    try {
+        const res = await fetch('/tuntityolasku_by_id', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lasku_id: selectedLaskuId })
+        });
+
+        if (!res.ok) throw new Error('Failed to fetch lasku data');
+
+        const data = await res.json();
+        const { lasku, tuntityot, tarvikkeet, totals } = data;
+
+        let html = `<h3>R2 Raportti: Lasku ID ${selectedLaskuId}</h3>`;
+        html += `<strong>Asiakas:</strong> ${lasku.asiakas_nimi} (${lasku.asiakas_osoite})<br>`;
+        html += `<strong>Työkohde:</strong> ${lasku.kohde_nimi} (${lasku.kohde_osoite})<br>`;
+        html += `<strong>Työtyyppi:</strong> ${lasku.tyotyyppi}<br><br>`;
+
+        let raporttiDiv = document.getElementById("r2ReportContainer")
+
+        html += `<h4>Tuntityöt</h4>`;
+        if (tuntityot.length > 0) {
+            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>Tunnit</th><th>Alennus %</th><th>Summa</th></tr></thead><tbody>`;
+            tuntityot.forEach(t => {
+                const summa = t.hinta * t.tunnit;
+                html += `<tr>
+                    <td>${t.nimi}</td>
+                    <td>${t.hinta}</td>
+                    <td>${t.tunnit}</td>
+                    <td>${t.alepros || 0}</td>
+                    <td>${summa}</td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        } else {
+            html += `<p>Ei tuntitöitä</p>`;
+        }
+
+        html += `<h4>Tarvikkeet</h4>`;
+        if (tarvikkeet.length > 0) {
+            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>Kpl</th><th>Alennus %</th><th>Summa</th></tr></thead><tbody>`;
+            tarvikkeet.forEach(t => {
+                const summa = t.myyntihinta * t.kpl;
+                html += `<tr>
+                    <td>${t.nimi}</td>
+                    <td>${t.myyntihinta}</td>
+                    <td>${t.kpl}</td>
+                    <td>${t.alepros || 0}</td>
+                    <td>${summa}</td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        } else {
+            html += `<p>Ei tarvikkeita</p>`;
+        }
+
+        html += `<h4>Yhteenveto</h4>`;
+        html += `<p>Työsumma: ${totals.tyoSumma.toFixed(2)}</p>`;
+        html += `<p>Tarvikesumma: ${totals.tarvikeSumma.toFixed(2)}</p>`;
+        html += `<p><strong>Kokonaissumma: ${totals.kokonais.toFixed(2)}</strong></p>`;
+        html += `<p>Kotitalousvähennys: ${totals.kotitalousvahennys.toFixed(2)}</p>`;
+
+        raporttiDiv.innerHTML = html;
+        raporttiDiv.style.display = 'block';
+
+    } catch (error) {
+        console.error(error);
+        alert('Raportin luonti epäonnistui. Tarkista konsoli.');
+    }
+}
 
 function toggleMaksuPvmField() {
   const maksettu = document.getElementById("laskuMaksettuSelect").value;
