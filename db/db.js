@@ -107,6 +107,17 @@ export async function addTuntityo(lasku_id, paivamaara, tunnit, tyotyyppi_id, al
   }
 }
 
+export async function addUrakkatyo(lasku_id, aloituspaiva, lopetuspaiva, hinta) {
+  try {
+    await pool.query(
+      "INSERT INTO urakkatyo (lasku_id, aloituspaiva, lopetuspaiva, hinta) VALUES ($1,$2,$3,$4)",
+      [lasku_id, aloituspaiva, lopetuspaiva, hinta]
+    );
+  } catch(err) {
+    console.error(err);
+  }
+}
+
 export async function getAsiakas() {
     try {
       const result = await pool.query('SELECT * FROM asiakas');
@@ -220,7 +231,11 @@ export async function getUrakkatyotFull(lasku_id) {
      WHERE u.lasku_id = $1`,
     [lasku_id]
   );
-  return result.rows;
+  // muuttaa hinnan stringistä numeeriseksi
+  return result.rows.map((row) => {
+    row.hinta = Number(row.hinta);
+    return row;
+  });
 }
 
 export async function getTarvikkeetFull(lasku_id) {

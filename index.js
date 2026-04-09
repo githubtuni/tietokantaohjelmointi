@@ -6,7 +6,8 @@ import {
     getTyokohde, 
     addTyokohde, 
     addLasku, 
-    addTuntityo, 
+    addTuntityo,
+    addUrakkatyo, 
     getTarvikkeet, 
     addTarvikeToLasku,
     addAsiakas,
@@ -46,6 +47,31 @@ const server = http.createServer(async (req, res) => {
                     data.tunnit, 
                     data.tyotyyppi_id, 
                     data.alepros
+                );
+                res.end('ok');
+            } catch(error) {
+                console.error(error);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: 'Server error' }));
+                }
+            });
+    }
+
+    else if (req.url === '/urakkatyo' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+           body += chunk.toString();
+        });
+
+            
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                await addUrakkatyo(
+                    data.lasku_id, 
+                    data.aloituspaiva, 
+                    data.lopetuspaiva, 
+                    data.hinta
                 );
                 res.end('ok');
             } catch(error) {
