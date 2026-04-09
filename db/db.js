@@ -1,6 +1,7 @@
 import pkg from 'pg'
 const { Pool } = pkg
 import config from './config.js';
+import { nextTick } from 'process';
 
 const pool = new Pool({
   user: config.dbUser,
@@ -207,11 +208,27 @@ export async function getTuntityotFull(lasku_id) {
   return result.rows;
 }
 
+export async function getUrakkatyotFull(lasku_id) {
+  const result = await pool.query(
+    `SELECT 
+        u.sopimuspaiva,
+        u.hinta,
+        u.tila,
+        u.aloituspaiva,
+        u.lopetuspaiva
+     FROM urakkatyo u
+     WHERE u.lasku_id = $1`,
+    [lasku_id]
+  );
+  return result.rows;
+}
+
 export async function getTarvikkeetFull(lasku_id) {
   const result = await pool.query(
     `SELECT 
         t.nimi,
         t.myyntihinta,
+        t.alv,
         lt.kpl,
         lt.alepros
      FROM lasku_tarvike lt
@@ -222,29 +239,65 @@ export async function getTarvikkeetFull(lasku_id) {
   return result.rows;
 }
 
-export function laskeLasku(tuntityot, tarvikkeet) {
+export function laskeLasku({tyyppi, tyot, tarvikkeet}) {
   let tyoSumma = 0;
   let tarvikeSumma = 0;
 
-  for (let t of tuntityot) {
-    const hinta = t.hinta * t.tunnit;
-     const ale = t.alepros || 0;  
-  const alennus = hinta * (ale / 100);
-    tyoSumma += (hinta - alennus);
+  let alvTyoSumma = 0;
+  let alvTarvikeSumma = 0;
+
+  // työt
+
+  if (tyyppi === "tuntityö") {
+    for (let t of tyot) {
+      const perus = t.hinta * t.tunnit;
+
+      const ale = t.alepros || 0;
+      const netto = perus - (perus * ale / 100);
+
+      const alvPros = 24; // manuaalinen veroprosentin asetus
+      const alv = netto * (alvPros / 100);
+
+      tyoSumma += netto;
+      alvTyoSumma += alv;
+    }
+  }
+  else if (tyyppi === "urakkatyö") {
+    for (let t of tyot) {
+      const netto = t.hinta;
+
+      const alvPros = 24;
+      const alv = netto * (alvPros / 100);
+
+      tyoSumma += netto;
+      alvTyoSumma += alv;
+    }
   }
 
   for (let tar of tarvikkeet) {
-    const hinta = tar.myyntihinta * tar.kpl;
-      const ale = tar.alepros || 0; 
-  const alennus = hinta * (ale / 100);
+    const perus = tar.myyntihinta * tar.kpl;
 
-    tarvikeSumma += (hinta - alennus);
-    
+    const ale = tar.alepros || 0; 
+    const netto = perus - (perus * ale / 100);
+
+    const alvPros = tar.alv || 24;
+    const alv = netto * (alvPros / 100);
+
+    tarvikeSumma += netto;
+    alvTarvikeSumma += alv;
   }
+  
+  const kotitalousvahennys = tyoSumma + alvTyoSumma;
+  const alvSumma = alvTyoSumma + alvTarvikeSumma;
+  const kokonais = tyoSumma + tarvikeSumma + alvSumma;
+
   return {
-  tyoSumma,
-  tarvikeSumma,
-  kokonais: tyoSumma + tarvikeSumma,
-  kotitalousvahennys: tyoSumma
+    tyoSumma,
+    tarvikeSumma,
+    alvTyoSumma,
+    alvTarvikeSumma,
+    alvSumma,
+    kokonais,
+    kotitalousvahennys
 };
 }

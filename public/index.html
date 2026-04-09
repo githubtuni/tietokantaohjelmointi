@@ -253,7 +253,7 @@ th, td {
   <br>
 
   <button onclick="createMuistutusmaksu()">+ Luo muistutusmaksu</button>
-  <button onclick="createRaporttiR2()">+ Raportti R2: Tuntityölasku</button>
+  <button onclick="laskuYhteenveto()">+ Yhteenveto laskusta (R2)</button>
 
   <div id="r2ReportContainer" class="info" style="display:none; margin-top:15px;"></div>
 </div>
@@ -345,14 +345,14 @@ function createMuistutusmaksu() {
     // TODO: create muistutusmaksu
 }
 
-async function createRaporttiR2() {
+async function laskuYhteenveto() {
     if (!selectedLaskuId) {
         alert("Valitse ensin lasku!");
         return;
     }
 
     try {
-        const res = await fetch('/tuntityolasku_by_id', {
+        const res = await fetch('/lasku_by_id', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lasku_id: selectedLaskuId })
@@ -361,44 +361,79 @@ async function createRaporttiR2() {
         if (!res.ok) throw new Error('Failed to fetch lasku data');
 
         const data = await res.json();
-        const { lasku, tuntityot, tarvikkeet, totals } = data;
+        const { lasku, tyot, tarvikkeet, totals } = data;
+        const tyyppi = tyot.tyyppi;
 
-        let html = `<h3>R2 Raportti: Lasku ID ${selectedLaskuId}</h3>`;
+        let html = `<h3>Yhteenveto: Lasku ID ${selectedLaskuId}</h3>`;
         html += `<strong>Asiakas:</strong> ${lasku.asiakas_nimi} (${lasku.asiakas_osoite})<br>`;
         html += `<strong>Työkohde:</strong> ${lasku.kohde_nimi} (${lasku.kohde_osoite})<br>`;
         html += `<strong>Työtyyppi:</strong> ${lasku.tyotyyppi}<br><br>`;
 
         let raporttiDiv = document.getElementById("r2ReportContainer")
 
-        html += `<h4>Tuntityöt</h4>`;
-        if (tuntityot.length > 0) {
-            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>Tunnit</th><th>Alennus %</th><th>Summa</th></tr></thead><tbody>`;
-            tuntityot.forEach(t => {
-                const summa = t.hinta * t.tunnit;
-                html += `<tr>
-                    <td>${t.nimi}</td>
-                    <td>${t.hinta}</td>
-                    <td>${t.tunnit}</td>
-                    <td>${t.alepros || 0}</td>
-                    <td>${summa}</td>
-                </tr>`;
+        html += `<h4>${tyyppi === "urakkatyo" ? "Urakkatyö" : "Tuntityöt"}</h4>`;
+        if (tyot.rows.length > 0) {
+
+          if (tyyppi === "tuntityö"){
+            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>Tunnit</th><th>Alennus %</th><th>ALV %</th><th>Summa</th></tr></thead><tbody>`;
+            
+            tyot.rows.forEach(t => {
+              const perus = t.hinta * t.tunnit;
+              const ale = t.alepros || 0;
+              const netto = perus - (perus * ale / 100);
+              const alv = netto * 0.24;
+              const total = netto + alv;
+
+              html += `<tr>
+                  <td>${t.nimi}</td>
+                  <td>${t.hinta}</td>
+                  <td>${t.tunnit}</td>
+                  <td>${t.alepros || 0}</td>
+                  <td>${24}</td>
+                  <td>${total.toFixed(2)}</td>
+              </tr>`;
             });
             html += `</tbody></table>`;
+          }
+          else if (tyyppi === "urakkatyö") {
+            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>ALV %</th><th>Summa</th></tr></thead><tbody>`;
+
+            tyot.rows.forEach(t => {
+              const netto = t.hinta;
+              const alv = netto * 0.24;
+              const total = netto + alv;
+
+              html += `<tr>
+                  <td>${t.nimi}</td>
+                  <td>${t.hinta}</td>
+                  <td>${24}</td>
+                  <td>${total.toFixed(2)}</td>
+              </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            }
         } else {
-            html += `<p>Ei tuntitöitä</p>`;
+            html += `<p>Ei töitä</p>`;
         }
 
         html += `<h4>Tarvikkeet</h4>`;
         if (tarvikkeet.length > 0) {
-            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>Kpl</th><th>Alennus %</th><th>Summa</th></tr></thead><tbody>`;
+            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>Kpl</th><th>Alennus %</th><th>ALV %</th><th>Summa</th></tr></thead><tbody>`;
             tarvikkeet.forEach(t => {
-                const summa = t.myyntihinta * t.kpl;
+                const perus = t.myyntihinta * t.kpl;
+                const ale = t.alepros || 0;
+                const netto = perus - (perus * ale / 100);
+                const alv = netto * (t.alv / 100);
+                const total = netto + alv;
+
                 html += `<tr>
                     <td>${t.nimi}</td>
                     <td>${t.myyntihinta}</td>
                     <td>${t.kpl}</td>
                     <td>${t.alepros || 0}</td>
-                    <td>${summa}</td>
+                    <td>${t.alv}</td>
+                    <td>${total.toFixed(2)}</td>
                 </tr>`;
             });
             html += `</tbody></table>`;
@@ -406,11 +441,13 @@ async function createRaporttiR2() {
             html += `<p>Ei tarvikkeita</p>`;
         }
 
-        html += `<h4>Yhteenveto</h4>`;
-        html += `<p>Työsumma: ${totals.tyoSumma.toFixed(2)}</p>`;
-        html += `<p>Tarvikesumma: ${totals.tarvikeSumma.toFixed(2)}</p>`;
+        html += `<h4>Hinnat</h4>`;
+        html += `<p>Työsumma (ennen alv): ${totals.tyoSumma.toFixed(2)}</p>`;
+        html += `<p>Työn alv: ${totals.alvTyoSumma.toFixed(2)}</p>`;
+        html += `<p>Tarvikesumma (ennen alv): ${totals.tarvikeSumma.toFixed(2)}</p>`;
+        html += `<p>Tarvikkeiden alv: ${totals.alvTarvikeSumma.toFixed(2)}</p>`;
         html += `<p><strong>Kokonaissumma: ${totals.kokonais.toFixed(2)}</strong></p>`;
-        html += `<p>Kotitalousvähennys: ${totals.kotitalousvahennys.toFixed(2)}</p>`;
+        html += `<p>Kotitalousvähennys (työ ja sen alv): ${totals.kotitalousvahennys.toFixed(2)}</p>`;
 
         raporttiDiv.innerHTML = html;
         raporttiDiv.style.display = 'block';
@@ -691,9 +728,10 @@ async function loadLaskut() {
         };
 
         // Append row to the correct table
-        if (row.laskun_tila === "Kesken") {
+        const tila = row.laskun_tila?.toLowerCase();
+        if (tila === "kesken") {
             keskeneraisetTbody.appendChild(tr);
-        } else if (row.laskun_tila === "Valmis") {
+        } else if (tila === "valmis") {
             valmiitTbody.appendChild(tr);
         }
     });

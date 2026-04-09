@@ -14,6 +14,7 @@ import {
     getLaskuFull,
     getTarvikkeetFull,
     getTuntityotFull,
+    getUrakkatyotFull,
     laskeLasku
 } from './db/db.js';
 
@@ -141,7 +142,7 @@ const server = http.createServer(async (req, res) => {
         });
     }
 
-    else if (req.url === '/tuntityolasku_by_id' && req.method === 'POST') {
+    else if (req.url === '/lasku_by_id' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => {
             body += chunk.toString();
@@ -159,15 +160,30 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 const lasku = await getLaskuFull(lasku_id);
-                const tuntityot = await getTuntityotFull(lasku_id);
+
+                const tyyppi = lasku.tyotyyppi?.toLowerCase();
+                let tyotRows = [];
+                if (tyyppi === "tuntityö") {
+                    tyotRows = await getTuntityotFull(lasku_id);
+                } else if (tyyppi === "urakkatyö") {
+                    tyotRows = await getUrakkatyotFull(lasku_id);
+                } else {
+                    tyotRows = [];
+                }
+
                 const tarvikkeet = await getTarvikkeetFull(lasku_id);
-                const totals = laskeLasku(tuntityot, tarvikkeet);
+
+                const totals = laskeLasku({tyyppi, tyot: tyotRows, tarvikkeet});
+                console.log(totals);
 
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({
                     lasku_id,
                     lasku,
-                    tuntityot,
+                    tyot: {
+                        tyyppi,
+                        rows: tyotRows
+                    },
                     tarvikkeet,
                     totals
                 }));

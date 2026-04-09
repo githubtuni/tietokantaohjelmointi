@@ -43,3 +43,69 @@ CREATE TABLE lasku (
     FOREIGN KEY (ed_lasku_id) REFERENCES lasku(lasku_id)
 );
 
+CREATE TABLE toimittaja (
+    toimittaja_id SERIAL PRIMARY KEY,
+    nimi VARCHAR(100),
+    osoite VARCHAR(200)
+);
+
+CREATE TABLE tarvike (
+    tarvike_id SERIAL PRIMARY KEY,
+    toimittaja_id INTEGER NOT NULL,
+    nimi VARCHAR(100),
+    merkki VARCHAR(50),
+    alv NUMERIC(4,2),
+    yksikko VARCHAR(20),
+    myyntihinta NUMERIC(10,2),
+    sisaanostohinta NUMERIC(10,2),
+    varastotilanne INTEGER,
+    FOREIGN KEY (toimittaja_id) REFERENCES toimittaja(toimittaja_id)
+);
+
+CREATE TABLE tyotyyppi (
+    tyotyyppi_id SERIAL PRIMARY KEY,
+    nimi VARCHAR(100) NOT NULL,
+    hinta NUMERIC(10,2) NOT NULL,
+    hinta_pvm DATE NOT NULL
+);
+
+-- tänne lisätty päivämääriä!! mutta ei korjattu foreign key juttua (kommentti)
+CREATE TABLE urakkatyo (
+    urakkatyo_id SERIAL PRIMARY KEY,
+    lasku_id INTEGER NOT NULL,
+    sopimuspaiva DATE,
+    aloituspaiva DATE,
+    lopetuspaiva DATE,
+    hinta NUMERIC(10,2),
+    tila VARCHAR(50),
+    FOREIGN KEY (lasku_id) REFERENCES lasku(lasku_id)
+);
+
+CREATE TABLE lasku_urakka (
+    lasku_id INTEGER NOT NULL,
+    urakkatyo_id INTEGER NOT NULL,
+    PRIMARY KEY (lasku_id, urakkatyo_id),
+    FOREIGN KEY (lasku_id) REFERENCES lasku(lasku_id),
+    FOREIGN KEY (urakkatyo_id) REFERENCES urakkatyo(urakkatyo_id)
+);
+
+CREATE TABLE lasku_tarvike (
+    lasku_id INTEGER NOT NULL,
+    tarvike_id INTEGER NOT NULL,
+    kpl INTEGER,
+    alepros INTEGER,
+    PRIMARY KEY (lasku_id, tarvike_id),
+    FOREIGN KEY (lasku_id) REFERENCES lasku(lasku_id),
+    FOREIGN KEY (tarvike_id) REFERENCES tarvike(tarvike_id)
+);
+
+CREATE TABLE tuntityo (
+    tuntityo_id SERIAL PRIMARY KEY,
+    lasku_id INTEGER NOT NULL,
+    tyotyyppi_id INTEGER NOT NULL,
+    paivamaara DATE,
+    tunnit NUMERIC(5,2),
+    alepros INTEGER,
+    FOREIGN KEY (lasku_id) REFERENCES lasku(lasku_id),
+    FOREIGN KEY (tyotyyppi_id) REFERENCES tyotyyppi(tyotyyppi_id)
+);
