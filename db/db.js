@@ -45,7 +45,26 @@ export async function getTarvikkeet() {
 
 export async function getLasku() {
     try {
-      const result = await pool.query('SELECT * FROM lasku');
+      const result = await pool.query(`
+      SELECT 
+        l.lasku_id,
+        l.tyokohde_id,
+        l.lahetys_pvm,
+        l.maksu_pvm,
+        l.laskun_tila,
+        l.tyotyyppi,
+        l.erapaiva,
+        l.maksettu,
+        l.ed_lasku_id,
+        l.viivastyskorko,
+        l.laskutuslisa,
+        l.muistutusnumero,
+        a.nimi AS asiakas_nimi, a.osoite AS asiakas_osoite,
+        tk.nimi AS kohde_nimi, tk.osoite AS kohde_osoite
+      FROM lasku l
+      JOIN tyokohde tk ON l.tyokohde_id = tk.tyokohde_id
+      JOIN asiakas a ON tk.asiakas_id = a.asiakas_id
+      `);
       return result.rows;
     } catch (err) {
       console.error(err);

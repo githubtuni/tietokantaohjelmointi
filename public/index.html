@@ -77,6 +77,7 @@ table {
 th, td {
   border: 1px solid #eeeded;
   padding: 6px;
+  text-align: left;
 }
 
 .submitButton {
@@ -106,16 +107,17 @@ th, td {
   <table id="keskeneraisetLaskutTable">
     <thead>
       <tr>
-        <th>Lasku-ID</th>
-        <th>Tila</th>
-        <th>Maksettu</th>
-        <th>Eräpäivä</th>
+        <th>Lasku ID</th>
+        <th>Asiakas</th>
+        <th>Työkohde</th>
+        <th>Työkohteen osoite</th>
+        <th>Työtyyppi</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
   
-  <div id="laskuInfo" class="info">Lisätietoja klikkaamalla</div>
+  <div id="laskuInfoKesken" class="info">Valitse lasku klikkaamalla</div>
   <br>
     
   <button onclick="toggleForm('laskuForm')">+ Luo laskupohja</button>
@@ -123,6 +125,9 @@ th, td {
   <button onclick="toggleForm('tuntityoForm')">+ Lisää tuntityö</button>
   <button onclick="toggleForm('urakkatyoForm')">+ Lisää urakkatyö</button>
   <button onclick="toggleForm('tarvikeForm')">+ Lisää tarvike</button>
+  <button onclick="laskuYhteenveto()">+ Muodosta hinta-arvio/tarjous</button>
+
+  <div id="r2ReportContainer" class="info" style="display:none; margin-top:15px;"></div>
 
   <div id="laskuForm" class="form">
       <h3>Uusi laskupohja</h3>
@@ -265,14 +270,20 @@ th, td {
   <table id="valmiitLaskutTable">
     <thead>
       <tr>
-        <th>Lasku-ID</th>
-        <th>Tila</th>
-        <th>Maksettu</th>
+        <th>Lasku ID</th>
+        <th>Asiakas</th>
+        <th>Työkohde</th>
+        <th>Työkohteen osoite</th>
         <th>Eräpäivä</th>
+        <th>Maksettu</th>
+        <th>Edellisen laskun ID</th>
+        <th>Muistutus nro</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
+
+  <div id="laskuInfoValmiit" class="info">Valitse lasku klikkaamalla</div>
   <br>
 
   <button onclick="createMuistutusmaksu()">+ Luo muistutusmaksu</button>
@@ -645,7 +656,8 @@ function openTab(event, tabId) {
     // Hide all forms on tab switch.
     document.querySelectorAll('.form').forEach(f => f.style.display = 'none');
 
-    showInfo('laskuInfo', 'Lisätietoja klikkaamalla');
+    showInfo('laskuInfoKesken', 'Valitse lasku klikkaamalla');
+    showInfo('laskuInfoValmiit', 'Valitse lasku klikkaamalla');
 
     // Clear all lasku ID spans in forms.
     const laskuSpans = ['laskuIdMuokkaus', 'laskuIdTuntityo', 'laskuIdUrakkatyo', 'laskuIdTarvike'];
@@ -712,31 +724,15 @@ async function loadLaskut() {
     valmiitTbody.innerHTML = '';
 
     data.forEach(row => {
-        laskut.set(row.lasku_id, {
-            ed_lasku_id: row.ed_lasku_id,
-            erapaiva: row.erapaiva,
-            laskun_tila: row.laskun_tila,
-            laskutuslisa: row.laskutuslisa,
-            maksettu: row.maksettu,
-            muistutusnumero: row.muistutusnumero,
-            maksu_pvm: row.maksu_pvm,
-            lahetys_pvm: row.lahetys_pvm,
-            tyokohde_id: row.tyokohde_id,
-            tyotyyppi: row.tyotyyppi,
-            viivastyskorko: row.viivastyskorko
-        });
+        laskut.set(row.lasku_id, row);
 
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${row.lasku_id}</td>
-            <td>${row.laskun_tila}</td>
-            <td>${row.maksettu ? "Kyllä" : "Ei"}</td>
-            <td>${row.erapaiva ? formatDateForInput(row.erapaiva) : "Puuttuu"}</td>`;
 
         tr.onclick = () => {
             selectedLaskuId = row.lasku_id;
 
-            showInfo('laskuInfo', `Valittu lasku: ${selectedLaskuId}`);
+            showInfo('laskuInfoKesken', `Valittu lasku: ${selectedLaskuId}`);
+            showInfo('laskuInfoValmiit', `Valittu lasku: ${selectedLaskuId}`);
 
             // Remove previous selection from all tables
             document.querySelectorAll('#keskeneraisetLaskutTable tr, #valmiitLaskutTable tr').forEach(r => r.classList.remove('selected'));
@@ -752,13 +748,31 @@ async function loadLaskut() {
             populateLaskuData();
         };
 
-        // Append row to the correct table
+
         const tila = row.laskun_tila?.toLowerCase();
-        if (tila === "kesken") {
+
+        if (tila === "kesken"){
+          tr.innerHTML = `
+            <td>${row.lasku_id}</td>
+            <td>${row.asiakas_nimi}</td>
+            <td>${row.kohde_nimi}</td>
+            <td>${row.kohde_osoite}</td>
+            <td>${row.tyotyyppi}</td>`;
             keskeneraisetTbody.appendChild(tr);
-        } else if (tila === "valmis") {
+        }
+        else if (tila === "valmis"){
+          tr.innerHTML = `
+            <td>${row.lasku_id}</td>
+            <td>${row.asiakas_nimi}</td>
+            <td>${row.kohde_nimi}</td>
+            <td>${row.kohde_osoite}</td>
+            <td>${row.erapaiva ? formatDateForInput(row.erapaiva) : "Puuttuu"}</td>
+            <td>${row.maksettu ? "Kyllä" : "Ei"}</td>
+            <td>${row.ed_lasku_id}</td>
+            <td>${row.muistutusnumero}</td>`;
             valmiitTbody.appendChild(tr);
         }
+
     });
 }
 loadLaskut();
