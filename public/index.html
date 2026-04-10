@@ -120,14 +120,14 @@ th, td {
   <div id="laskuInfoKesken" class="info">Valitse lasku klikkaamalla</div>
   <br>
     
-  <button onclick="toggleForm('laskuForm')">+ Luo laskupohja</button>
-  <button onclick="editLasku()">+ Muokkaa laskua</button>
+  <button onclick="toggleForm('laskuForm')">+ Luo uusi laskupohja</button>
   <button onclick="toggleForm('tuntityoForm')">+ Lisää tuntityö</button>
   <button onclick="toggleForm('urakkatyoForm')">+ Lisää urakkatyö</button>
   <button onclick="toggleForm('tarvikeForm')">+ Lisää tarvike</button>
-  <button onclick="laskuYhteenveto()">+ Muodosta hinta-arvio/tarjous</button>
+  <button onclick="laskuYhteenveto('KeskenReportContainer')">+ Muodosta hinta-arvio/tarjous</button>
+  <button onclick="toggleForm('valmiiksiForm')">+ Merkitse lasku valmiiksi</button>
 
-  <div id="r2ReportContainer" class="info" style="display:none; margin-top:15px;"></div>
+  <div id="KeskenReportContainer" class="info report" style="display:none; margin-top:15px;"></div>
 
   <div id="laskuForm" class="form">
       <h3>Uusi laskupohja</h3>
@@ -150,41 +150,28 @@ th, td {
       </form>
   </div>
 
-  <div id="muokkausForm" class="form">
-      <h3>Muokkaa laskua</h3>
+  <div id="valmiiksiForm" class="form">
+      <h3>Merkitse lasku valmiiksi</h3>
 
-      <form id="formLaskuMuokkaus">
-          <label>Lasku ID: <span id="laskuIdMuokkaus">--</span></label><br><br>
+      <form id="formLaskuValmiiksi">
+          <label>Lasku ID: <span id="laskuIdValmiiksi">--</span></label><br><br>
 
-          <label for="tyokohdeSelectMuokkaus">Työkohde:</label><br>
-          <select id="tyokohdeSelectMuokkaus" name="tyokohde_id">
-              <!-- Options populated dynamically -->
+          <label for="laskuMaaraInput">Kuinka monta laskua luodaan:</label><br>
+          <select id="laskuMaaraSelect">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
           </select><br><br>
-
-          <label for="laskunTilaSelect">Laskun tila:</label><br>
-          <select id="laskunTilaSelect">
-              <option value="Kesken">Kesken</option>
-              <option value="Valmis">Valmis</option>
-          </select><br><br>
-
-          <label>Työtyyppi: <span id="tyotyyppiMuokkaus"></span></label><br><br>
-
+          <!-- TODO: laskujen jakamistoiminto (eräpäiviä ja lähetyspäiviä luodaan sen mukaan)-->
+          
           <label for="erapaivaInput">Eräpäivä:</label><br>
           <input type="date" id="erapaivaInput" name="erapaiva"><br><br>
 
-          <label for="laskuMaksettu">Lasku maksettu:</label><br>
-          <select id="laskuMaksettuSelect">
-              <option value="false">Ei</option>
-              <option value="true">Kyllä</option>
-          </select><br><br>
-
-          <div id="maksuPvmContainer" style="display:none;">
-              <label for="maksuPvmInput">Laskun maksupäivämäärä:</label><br>
-              <input type="date" id="maksuPvmInput" name="maksu_pvm"><br><br>
-          </div>
+          <label for="lahetyspaivaInput">Laskun lähetyspäivä:</label><br>
+          <input type="date" id="lahetyspaivaInput" name="lahetyspaiva"><br><br>
 
           <button type="submit" class="submitButton">
-              Tallenna muutokset
+              Merkitse valmiiksi ja lähetä lasku
           </button>
       </form>
   </div>
@@ -287,9 +274,27 @@ th, td {
   <br>
 
   <button onclick="createMuistutusmaksu()">+ Luo muistutusmaksu</button>
-  <button onclick="laskuYhteenveto()">+ Yhteenveto laskusta (R2)</button>
+  <button onclick="laskuYhteenveto('ValmiitReportContainer')">+ Yhteenveto laskusta (R2)</button>
+  <button onclick="toggleForm('maksettuForm')">+ Merkitse lasku maksetuksi</button>
 
-  <div id="r2ReportContainer" class="info" style="display:none; margin-top:15px;"></div>
+
+  <div id="ValmiitReportContainer" class="info report" style="display:none; margin-top:15px;"></div>
+
+  <div id="maksettuForm" class="form">
+    <h3>Merkitse lasku maksetuksi</h3>
+
+    <form id="formLaskuMaksettu">
+        <label>Lasku ID: <span id="laskuIdMaksettu">--</span></label><br><br>
+
+        <label for="maksupaivaInput">Laskun maksupäivä:</label><br>
+        <input type="date" id="maksupaivaInput" name="maksupaiva"><br><br>
+
+        <button type="submit" class="submitButton">
+            Merkitse maksetuksi
+        </button>
+    </form>
+  </div>
+
 </div>
 
 <div id="asiakkaat" class="tab-content">
@@ -379,7 +384,7 @@ function createMuistutusmaksu() {
     // TODO: create muistutusmaksu
 }
 
-async function laskuYhteenveto() {
+async function laskuYhteenveto(raporttidiv_id) {
     if (!selectedLaskuId) {
         alert("Valitse ensin lasku!");
         return;
@@ -403,7 +408,7 @@ async function laskuYhteenveto() {
         html += `<strong>Työkohde:</strong> ${lasku.kohde_nimi} (${lasku.kohde_osoite})<br>`;
         html += `<strong>Työtyyppi:</strong> ${lasku.tyotyyppi}<br><br>`;
 
-        let raporttiDiv = document.getElementById("r2ReportContainer")
+        let raporttiDiv = document.getElementById(raporttidiv_id);
 
         html += `<h4>${tyyppi === "urakkatyö" ? "Urakkatyö" : "Tuntityöt"}</h4>`;
         if (tyot.rows.length > 0) {
@@ -483,6 +488,8 @@ async function laskuYhteenveto() {
         html += `<p><strong>Kokonaissumma: ${totals.kokonais.toFixed(2)}</strong></p>`;
         html += `<p>Kotitalousvähennys (työ ja sen alv): ${totals.kotitalousvahennys.toFixed(2)}</p>`;
 
+        html += `<button onclick="closeReports()" style="margin-top:10px;">Sulje</button>`;
+
         raporttiDiv.innerHTML = html;
         raporttiDiv.style.display = 'block';
 
@@ -491,6 +498,12 @@ async function laskuYhteenveto() {
         alert('Raportin luonti epäonnistui. Tarkista konsoli.');
     }
 }
+
+function closeReports() {
+    document.querySelectorAll('.report')
+        .forEach(f => f.style.display = 'none');
+}
+
 
 function toggleMaksuPvmField() {
   const maksettu = document.getElementById("laskuMaksettuSelect").value;
@@ -511,15 +524,12 @@ async function updateLasku() {
   }
 
   const lasku_id = selectedLaskuId;
-  const tyokohde_id = document.getElementById("tyokohdeSelectMuokkaus").value;
-  const laskun_tila = document.getElementById("laskunTilaSelect").value;
+  const laskun_tila = "valmis";
   const erapaivaRaw = document.getElementById("erapaivaInput").value;
-  const maksettuRaw = document.getElementById("laskuMaksettuSelect").value;
-  const maksuPvmRaw = document.getElementById("maksuPvmInput").value;
+  const lahetyspaivaRaw = document.getElementById("lahetyspaivaInput").value;
 
   const erapaiva = erapaivaRaw ? erapaivaRaw : null;
-  const maksettu = maksettuRaw === "true";
-  const maksu_pvm = maksuPvmRaw ? maksuPvmRaw : null;
+  const lahetys_pvm = lahetyspaivaRaw ? lahetyspaivaRaw : null;
 
   await fetch("/lasku_update", {
     method: "POST",
@@ -528,28 +538,47 @@ async function updateLasku() {
     },
     body: JSON.stringify({
       lasku_id,
-      tyokohde_id,
       laskun_tila,
       erapaiva,
+      lahetys_pvm
+    })
+  });
+
+  alert("Lasku lähetetty!");
+
+  loadLaskut();
+}
+
+async function readyLasku() {
+  if (!selectedLaskuId) {
+    alert("Valitse ensin lasku!");
+    return;
+  }
+
+  const lasku_id = selectedLaskuId;
+  const maksettu = "true";
+  const maksupaivaRaw = document.getElementById("maksupaivaInput").value;
+
+  const maksu_pvm = maksupaivaRaw ? maksupaivaRaw : null;
+
+  await fetch("/lasku_ready", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      lasku_id,
       maksettu,
       maksu_pvm
     })
   });
 
-  alert("Lasku päivitetty!");
+  alert("Lasku maksettu!");
 
   loadLaskut();
 }
 
-function editLasku() {
-    if(!selectedLaskuId) {
-      alert("Valitse ensin lasku!")
-      return;
-    }
 
-    toggleForm("muokkausForm");
-    populateLaskuData();
-}
 
 function populateLaskuData() {
     if (!selectedLaskuId) {
@@ -574,13 +603,12 @@ function populateLaskuData() {
       tyokohdeSelect.appendChild(option);
     });
 
-    document.getElementById("laskuIdMuokkaus").textContent = selectedLaskuId;
+    document.getElementById("laskuIdValmiiksi").textContent = selectedLaskuId;
     document.getElementById("laskunTilaSelect").value = laskuData.laskun_tila ?? "Kesken";
     document.getElementById("erapaivaInput").value = formatDateForInput(laskuData.erapaiva);
-    document.getElementById("laskuMaksettuSelect").value = String(laskuData.maksettu ?? false);
-    document.getElementById("maksuPvmInput").value = formatDateForInput(laskuData.maksu_pvm);
-    document.getElementById("tyotyyppiMuokkaus").textContent = laskuData.tyotyyppi ?? "--";
-    toggleMaksuPvmField();
+    //document.getElementById("laskuMaksettuSelect").value = String(laskuData.maksettu ?? false);
+    //document.getElementById("maksuPvmInput").value = formatDateForInput(laskuData.maksu_pvm);
+    //toggleMaksuPvmField();
 }
 
 function formatDateForInput(dateString) {
@@ -660,7 +688,7 @@ function openTab(event, tabId) {
     showInfo('laskuInfoValmiit', 'Valitse lasku klikkaamalla');
 
     // Clear all lasku ID spans in forms.
-    const laskuSpans = ['laskuIdMuokkaus', 'laskuIdTuntityo', 'laskuIdUrakkatyo', 'laskuIdTarvike'];
+    const laskuSpans = ['laskuIdValmiiksi', 'laskuIdTuntityo', 'laskuIdUrakkatyo', 'laskuIdTarvike'];
     laskuSpans.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = '--';
@@ -672,6 +700,9 @@ function openTab(event, tabId) {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
+
+    // Hide report
+    document.querySelectorAll('.report').forEach(f => f.style.display = 'none');
 }
 
 function showInfo(infoId, text) {
@@ -744,7 +775,8 @@ async function loadLaskut() {
             document.getElementById('laskuIdTuntityoInput').value = selectedLaskuId;
             document.getElementById('laskuIdUrakkatyo').textContent = selectedLaskuId;
             document.getElementById('laskuIdUrakkatyoInput').value = selectedLaskuId;
-            document.getElementById("laskuIdMuokkaus").textContent = selectedLaskuId;
+            document.getElementById("laskuIdValmiiksi").textContent = selectedLaskuId;
+            document.getElementById("laskuIdMaksettu").textContent = selectedLaskuId;
             populateLaskuData();
         };
 
@@ -767,7 +799,9 @@ async function loadLaskut() {
             <td>${row.kohde_nimi}</td>
             <td>${row.kohde_osoite}</td>
             <td>${row.erapaiva ? formatDateForInput(row.erapaiva) : "Puuttuu"}</td>
-            <td>${row.maksettu ? "Kyllä" : "Ei"}</td>
+            <td>${row.maksettu 
+                  ? `Kyllä (${row.maksu_pvm ? formatDateForInput(row.maksu_pvm) : "-"})` 
+                  : "Ei"}</td>
             <td>${row.ed_lasku_id}</td>
             <td>${row.muistutusnumero}</td>`;
             valmiitTbody.appendChild(tr);
@@ -1023,11 +1057,15 @@ document.getElementById("formTyokohde").addEventListener("submit", function (e) 
   addTyokohde();
 });
 
-document.getElementById("laskuMaksettuSelect").addEventListener("change", toggleMaksuPvmField);
 
-document.getElementById("formLaskuMuokkaus").addEventListener("submit", function (e) {
+document.getElementById("formLaskuValmiiksi").addEventListener("submit", function (e) {
   e.preventDefault();
   updateLasku();
+});
+
+document.getElementById("formLaskuMaksettu").addEventListener("submit", function (e) {
+  e.preventDefault();
+  readyLasku();
 });
 
 </script>

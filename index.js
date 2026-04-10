@@ -12,6 +12,7 @@ import {
     addTarvikeToLasku,
     addAsiakas,
     updateLasku,
+    readyLasku,
     getLaskuFull,
     getTarvikkeetFull,
     getTuntityotFull,
@@ -152,10 +153,31 @@ const server = http.createServer(async (req, res) => {
             try {
                 const data = JSON.parse(body);
                 await updateLasku(
-                    data.lasku_id, 
-                    data.tyokohde_id, 
+                    data.lasku_id,  
                     data.laskun_tila,
                     data.erapaiva,
+                    data.lahetys_pvm
+                )
+                res.end('ok');
+            } catch(error) {
+                console.error(error);
+                res.statusCode = 500;
+                res.end(JSON.stringify({error: 'Server error'}));
+            }
+        });
+    }
+
+    else if (req.url === '/lasku_ready' && req.method === 'POST') {
+        let body = ''
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                await readyLasku(
+                    data.lasku_id,  
                     data.maksettu,
                     data.maksu_pvm
                 )
@@ -200,7 +222,6 @@ const server = http.createServer(async (req, res) => {
                 const tarvikkeet = await getTarvikkeetFull(lasku_id);
 
                 const totals = laskeLasku({tyyppi, tyot: tyotRows, tarvikkeet});
-                console.log(totals);
 
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({

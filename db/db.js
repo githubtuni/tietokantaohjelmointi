@@ -72,20 +72,35 @@ export async function getLasku() {
     }
 }
 
-export async function updateLasku(lasku_id, tyokohde_id, laskun_tila, erapaiva, maksettu, maksu_pvm) {
+export async function updateLasku(lasku_id, laskun_tila, erapaiva, lahetys_pvm) {
   try {
     await pool.query(
       `
       UPDATE lasku
       SET
-        tyokohde_id = $1,
-        laskun_tila = $2,
-        erapaiva = $3,
-        maksettu = $4,
-        maksu_pvm = $5
-      WHERE lasku_id = $6
+        laskun_tila = $1,
+        erapaiva = $2,
+        lahetys_pvm = $3
+      WHERE lasku_id = $4
       `,
-      [tyokohde_id, laskun_tila, erapaiva, maksettu, maksu_pvm, lasku_id]
+      [laskun_tila, erapaiva, lahetys_pvm, lasku_id]
+    );
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function readyLasku(lasku_id, maksettu, maksu_pvm) {
+  try {
+    await pool.query(
+      `
+      UPDATE lasku
+      SET
+        maksettu = $1,
+        maksu_pvm = $2
+      WHERE lasku_id = $3
+      `,
+      [maksettu, maksu_pvm, lasku_id]
     );
   } catch (error) {
     console.error(error);
