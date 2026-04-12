@@ -148,7 +148,11 @@ export async function addUrakkatyo(lasku_id, aloituspaiva, lopetuspaiva, hinta) 
       [lasku_id, aloituspaiva, lopetuspaiva, hinta]
     );
   } catch(err) {
+    if (err.constraint === "urakkatyo_lasku_id_conflict") {
+      throw new Error("Already exists")
+    }
     console.error(err);
+    throw(err)
   }
 }
 

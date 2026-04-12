@@ -76,9 +76,15 @@ const server = http.createServer(async (req, res) => {
                 );
                 res.end('ok');
             } catch(error) {
-                console.error(error);
-                res.statusCode = 500;
-                res.end(JSON.stringify({ error: 'Server error' }));
+                if (error.message === "Already exists") {
+                    res.statusCode = 409;
+                    res.end(JSON.stringify({ error: 'Urakkatyö exists for lasku'}))
+                }
+                else {
+                    console.error(error);
+                    res.statusCode = 500;
+                    res.end(JSON.stringify({ error: 'Server error' }));
+                }
                 }
             });
     }
