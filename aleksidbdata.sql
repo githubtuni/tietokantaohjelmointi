@@ -58,10 +58,13 @@ CREATE TABLE tyotyyppi (
 CREATE TABLE urakkatyo (
     urakkatyo_id SERIAL PRIMARY KEY,
     lasku_id INTEGER NOT NULL,
-    paivamaara DATE,
+    sopimuspaiva DATE,
+    aloituspaiva DATE,
+    lopetuspaiva DATE,
     hinta NUMERIC(10,2),
     tila VARCHAR(50),
-    FOREIGN KEY (lasku_id) REFERENCES lasku(lasku_id)
+    FOREIGN KEY (lasku_id) REFERENCES lasku(lasku_id),
+    CONSTRAINT urakkatyo_lasku_id_conflict UNIQUE(lasku_id)
 );
 
 CREATE TABLE lasku_urakka (
@@ -93,19 +96,9 @@ CREATE TABLE tuntityo (
     FOREIGN KEY (tyotyyppi_id) REFERENCES tyotyyppi(tyotyyppi_id)
 );
 
-
-INSERT INTO asiakas (Nimi, Osoite) VALUES ('Jaska Hosunen', 'Susimetsä');
-INSERT INTO asiakas (Nimi, Osoite) VALUES ('Lissu Jokinen', 'Nurmitie');
-INSERT INTO asiakas (Nimi, Osoite) VALUES ('Masa Näsänen', 'Masalantie');
-
-INSERT INTO tyokohde (asiakas_id, nimi, osoite) VALUES (1,'Mökki', 'Susimetsä');
-INSERT INTO tyokohde (asiakas_id, nimi, osoite) VALUES (1, 'Omakotitalo', 'Nurmitie');
-INSERT INTO tyokohde (asiakas_id, nimi, osoite) VALUES (2, 'Maja', 'Huitsinneva');
-INSERT INTO tyokohde (asiakas_id, nimi, osoite) VALUES (3, 'Asunto', 'Puotonkorpi');
-
-INSERT INTO tyotyyppi (nimi, hinta, hinta_pvm) VALUES ('Suunnittelu', 55, '01-01-2026');
-INSERT INTO tyotyyppi (nimi, hinta, hinta_pvm) VALUES ('Työ', 45, '01-01-2026');
-INSERT INTO tyotyyppi (nimi, hinta, hinta_pvm) VALUES ('Aputyö', 35, '01-01-2026');
+INSERT INTO tyotyyppi (nimi, hinta, hinta_pvm) VALUES ('Suunnittelu', 44.35, '01-01-2026');
+INSERT INTO tyotyyppi (nimi, hinta, hinta_pvm) VALUES ('Työ', 36.29, '01-01-2026');
+INSERT INTO tyotyyppi (nimi, hinta, hinta_pvm) VALUES ('Aputyö', 28.23, '01-01-2026');
 
 INSERT INTO toimittaja (nimi, osoite) VALUES
 ('ABB Oy', 'Niittylänkuja 2, 00320 Helsinki, Finland'),
