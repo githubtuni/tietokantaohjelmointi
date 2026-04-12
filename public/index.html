@@ -587,7 +587,7 @@ function populateLaskuData() {
     }
 
     const laskuData = laskut.get(Number(selectedLaskuId));
-    const tyokohdeSelect = document.getElementById("tyokohdeSelectMuokkaus");
+    const tyokohdeSelect = document.getElementById("tyokohdeSelect");
     // Clear select before every function call to not reappend same data.
     tyokohdeSelect.innerHTML = "";
 
@@ -960,6 +960,12 @@ document.getElementById("formTuntityo").addEventListener("submit", async functio
     return;
   }
 
+  if (laskut.get(Number(selectedLaskuId)).tyotyyppi != "tuntityö") {
+    alert("Ei voi lisätä urakkatyöhön tuntitöitä!");
+    document.getElementById("formTuntityo").reset();
+    return;
+  }
+
   const lasku_id = document.getElementById("laskuIdTuntityoInput").value;
   const paivamaara = document.getElementById("paivamaara").value;
   const tunnit = document.getElementById("tunnit").value;
@@ -993,12 +999,18 @@ document.getElementById("formUrakkatyo").addEventListener("submit", async functi
     return;
   }
 
+  if (laskut.get(Number(selectedLaskuId)).tyotyyppi != "urakkatyö") {
+    alert("Ei voi lisätä urakkatöitä tuntitöihin!");
+    document.getElementById("formUrakkatyo").reset();
+    return;
+  }
+
   const lasku_id = document.getElementById("laskuIdUrakkatyoInput").value;
   const aloituspaiva = document.getElementById("aloituspaiva").value;
   const lopetuspaiva = document.getElementById("lopetuspaiva").value;
   const hinta = Number(document.getElementById("hinta").value) || 0;
 
-  await fetch("/urakkatyo", {
+  const response = await fetch("/urakkatyo", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -1011,7 +1023,13 @@ document.getElementById("formUrakkatyo").addEventListener("submit", async functi
     })
   });
 
-  alert("Urakkatyö lisätty!");
+  if (response.status === 409) {
+    alert("Laskulla on jo urakkatyö! Et voi lisätä toista.");
+  } 
+  else {
+    alert("Urakkatyö lisätty!");
+  }
+
   document.getElementById("formUrakkatyo").reset();
 });
 
