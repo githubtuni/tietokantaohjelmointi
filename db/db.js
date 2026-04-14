@@ -354,3 +354,30 @@ export function laskeLasku({tyyppi, tyot, tarvikkeet}) {
     kotitalousvahennys
 };
 }
+
+export async function getR6() {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        a.nimi AS asiakas,
+        tk.osoite AS tyokohde,
+        t.nimi AS tarvike,
+        SUM(lt.kpl) AS maara
+      FROM lasku_tarvike lt
+      JOIN tarvike t ON lt.tarvike_id = t.tarvike_id
+      JOIN toimittaja toimi ON t.toimittaja_id = toimi.toimittaja_id
+      JOIN lasku l ON lt.lasku_id = l.lasku_id
+      JOIN tyokohde tk ON l.tyokohde_id = tk.tyokohde_id
+      JOIN asiakas a ON tk.asiakas_id = a.asiakas_id
+      WHERE toimi.nimi = 'Junk Co'
+      GROUP BY a.nimi, tk.osoite, t.nimi
+      ORDER BY a.nimi
+
+    `);
+
+    return result.rows;
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}

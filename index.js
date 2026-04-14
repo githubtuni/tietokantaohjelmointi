@@ -17,7 +17,8 @@ import {
     getTarvikkeetFull,
     getTuntityotFull,
     getUrakkatyotFull,
-    laskeLasku
+    laskeLasku,
+    getR6
 } from './db/db.js';
 
 const hostname = '192.168.4.115';
@@ -294,6 +295,17 @@ const server = http.createServer(async (req, res) => {
         });
 
     }
+    else if (req.url === '/r6' && req.method === 'GET') {
+    try {
+        const data = await getR6();
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(data));
+    } catch (err) {
+        console.error(err);
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: 'Server error' }));
+    }
+}
 
     else {
     res.statusCode = 404;

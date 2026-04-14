@@ -100,6 +100,7 @@ th, td {
   <button class="tab-button active" onclick="openTab(event, 'keskeneraisetLaskut')">Keskeneräiset laskut</button>
   <button class="tab-button" onclick="openTab(event, 'valmiitLaskut')">Valmiit laskut</button>
   <button class="tab-button" onclick="openTab(event, 'asiakkaat')">Asiakkaat</button>
+  <button class="tab-button" onclick="openTab(event, 'r6')">R6 raportti</button>
 </div>
 
 
@@ -206,6 +207,26 @@ th, td {
         </button>
     </form>
   </div>
+
+  <div id="r6" class="tab-content">
+
+  <h3>Junk Co tarvikeraportti</h3>
+
+  <button onclick="loadR6()">Hae raportti</button>
+
+  <table id="r6Table">
+    <thead>
+      <tr>
+        <th>Asiakas</th>
+        <th>Työkohde</th>
+        <th>Tarvike</th>
+        <th>Määrä</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+</div>
 
   <div id="urakkatyoForm" class="form">
     <h3>Lisää uusi urakkatyö</h3>
@@ -502,6 +523,42 @@ async function laskuYhteenveto(raporttidiv_id) {
 function closeReports() {
     document.querySelectorAll('.report')
         .forEach(f => f.style.display = 'none');
+}
+async function loadR6() {
+  try {
+    const res = await fetch('/r6');
+    const data = await res.json();
+
+    const tbody = document.querySelector('#r6Table tbody');
+    tbody.innerHTML = '';
+
+    for (const row of data) {
+      const tr = document.createElement('tr');
+
+      const tdAsiakas = document.createElement('td');
+      tdAsiakas.textContent = row.asiakas;
+
+      const tdKohde = document.createElement('td');
+      tdKohde.textContent = row.tyokohde;
+
+      const tdTarvike = document.createElement('td');
+      tdTarvike.textContent = row.tarvike;
+
+      const tdMaara = document.createElement('td');
+      tdMaara.textContent = row.maara;
+
+      tr.appendChild(tdAsiakas);
+      tr.appendChild(tdKohde);
+      tr.appendChild(tdTarvike);
+      tr.appendChild(tdMaara);
+
+      tbody.appendChild(tr);
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("R6 raportin haku epäonnistui");
+  }
 }
 
 
