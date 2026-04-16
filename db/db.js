@@ -11,6 +11,9 @@ const pool = new Pool({
   port: 5432,
 })
 
+// Simulated user role
+const userRole = "admin"
+
 export async function addAsiakas(nimi, osoite) {
     try {
       await pool.query(
@@ -73,6 +76,11 @@ export async function getLasku() {
 }
 
 export async function updateLasku(lasku_id, laskun_tila, erapaiva, lahetys_pvm) {
+  
+  if (userRole !== "admin") {
+    throw new Error("Requires admin privileges.")
+  }
+
   try {
     await pool.query(
       `
@@ -91,6 +99,11 @@ export async function updateLasku(lasku_id, laskun_tila, erapaiva, lahetys_pvm) 
 }
 
 export async function readyLasku(lasku_id, maksettu, maksu_pvm) {
+
+  if (userRole !== "admin") {
+    throw new Error("Requires admin privileges.")
+  }
+
   try {
     await pool.query(
       `
@@ -105,9 +118,13 @@ export async function readyLasku(lasku_id, maksettu, maksu_pvm) {
   } catch (error) {
     console.error(error);
   }
-}
+} 
 
 export async function addLasku(tyokohde_id, tyotyyppi) {
+  
+  if (userRole !== "admin") {
+    throw new Error("Requires admin privileges.")
+  }
 
   try {
     await pool.query(
@@ -189,42 +206,6 @@ export async function addTyokohde(asiakas_id, nimi, osoite) {
   }
 
 } 
-export async function getLaskuById(id) {
-
-  const lasku = await pool.query(
-    'SELECT * FROM lasku WHERE lasku_id = $1',
-    [id]
-  );
-
-  const tuntityot = await pool.query(
-    'SELECT * FROM tuntityo WHERE lasku_id = $1',
-    [id]
-  );
-
-  return {
-    lasku: lasku.rows[0],
-    tuntityot: tuntityot.rows
-  };
-}
-
-export async function getTuntityotByLasku(lasku_id) {
-  const result = await pool.query(
-    "SELECT * FROM tuntityo WHERE lasku_id = $1",
-    [lasku_id]
-  );
-  return result.rows;
-}
-
-export async function getTarvikkeetByLasku(lasku_id) {
-  const result = await pool.query(
-    `SELECT t.nimi, lt.kpl 
-     FROM lasku_tarvike lt
-     JOIN tarvike t ON t.tarvike_id = lt.tarvike_id
-     WHERE lt.lasku_id = $1`,
-    [lasku_id]
-  );
-  return result.rows;
-}
 
 export async function getLaskuFull(lasku_id) {
   const result = await pool.query(`
