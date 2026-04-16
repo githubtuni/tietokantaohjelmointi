@@ -589,7 +589,7 @@ async function updateLasku() {
   const erapaiva = erapaivaRaw ? erapaivaRaw : null;
   const lahetys_pvm = lahetyspaivaRaw ? lahetyspaivaRaw : null;
 
-  await fetch("/lasku_update", {
+  const res = await fetch("/lasku_update", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -602,8 +602,13 @@ async function updateLasku() {
     })
   });
 
-  alert("Lasku lähetetty!");
-
+  if (res.status === 403) {
+    alert("Ei riittäviä oikeuksia muokata laskua");
+  } 
+  else {
+    alert("Lasku lähetetty!");
+  }
+  document.getElementById("formLaskuValmiiksi").reset();
   loadLaskut();
 }
 
@@ -619,7 +624,7 @@ async function readyLasku() {
 
   const maksu_pvm = maksupaivaRaw ? maksupaivaRaw : null;
 
-  await fetch("/lasku_ready", {
+  const res = await fetch("/lasku_ready", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -631,7 +636,14 @@ async function readyLasku() {
     })
   });
 
-  alert("Lasku maksettu!");
+  if (res.status === 403) {
+    alert("Ei riittäviä oikeuksia muokata laskua");
+  } 
+  else {
+    alert("Lasku maksettu!");
+  }
+
+  document.getElementById("formLaskuMaksettu").reset();
 
   loadLaskut();
 }
@@ -792,14 +804,21 @@ async function addLasku(){
         alert("Valitse työkohde ja työtyyppi");
         return;
     }
-    await fetch("/lasku", {
+    const res = await fetch("/lasku", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tyokohde_id, tyotyyppi })
     });
-  document.getElementById("tyokohdeSelect").value = "";
-  document.getElementById("tyotyyppiSelect").value = "";
-  loadLaskut();
+
+    if (res.status === 403) {
+      alert("Ei riittäviä oikeuksia luoda laskua");
+    } 
+    else {
+      alert("Laskupohja luotu!");
+    }
+    document.getElementById("tyokohdeSelect").value = "";
+    document.getElementById("tyotyyppiSelect").value = "";
+    loadLaskut();
 }
 
 
