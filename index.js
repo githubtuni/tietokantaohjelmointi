@@ -143,9 +143,15 @@ const server = http.createServer(async (req, res) => {
                 await addLasku(data.tyokohde_id, data.tyotyyppi);
                 res.end('ok');
             } catch (err) {
-                console.error(err);
-                res.statusCode = 500;
-                res.end(JSON.stringify({ error: 'Server error' }));
+                if (err.message === "Requires admin privileges.") {
+                    res.statusCode = 403;
+                    res.end(JSON.stringify({ error: 'Insufficient privileges to update lasku'}))
+                }
+                else {
+                    console.error(error);
+                    res.statusCode = 500;
+                    res.end(JSON.stringify({error: 'Server error'}));
+                }
             }
         });
     }
@@ -167,9 +173,15 @@ const server = http.createServer(async (req, res) => {
                 )
                 res.end('ok');
             } catch(error) {
-                console.error(error);
-                res.statusCode = 500;
-                res.end(JSON.stringify({error: 'Server error'}));
+                if (error.message === "Requires admin privileges.") {
+                    res.statusCode = 403;
+                    res.end(JSON.stringify({ error: 'Insufficient privileges to update lasku'}))
+                }
+                else {
+                    console.error(error);
+                    res.statusCode = 500;
+                    res.end(JSON.stringify({error: 'Server error'}));
+                }
             }
         });
     }
@@ -190,9 +202,15 @@ const server = http.createServer(async (req, res) => {
                 )
                 res.end('ok');
             } catch(error) {
-                console.error(error);
-                res.statusCode = 500;
-                res.end(JSON.stringify({error: 'Server error'}));
+                if (error.message === "Requires admin privileges.") {
+                    res.statusCode = 403;
+                    res.end(JSON.stringify({ error: 'Insufficient privileges to update lasku'}))
+                }
+                else {
+                    console.error(error);
+                    res.statusCode = 500;
+                    res.end(JSON.stringify({error: 'Server error'}));
+                }
             }
         });
     }
