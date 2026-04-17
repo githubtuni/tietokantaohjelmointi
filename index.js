@@ -18,7 +18,8 @@ import {
     getTuntityotFull,
     getUrakkatyotFull,
     laskeLasku,
-    getR6
+    getR6,
+    getOriginalLaskuId
 } from './db/db.js';
 
 const hostname = '192.168.4.115';
@@ -323,7 +324,18 @@ const server = http.createServer(async (req, res) => {
         res.statusCode = 500;
         res.end(JSON.stringify({ error: 'Server error' }));
     }
-}
+    }
+    else if (req.url === '/original_lasku_id' && req.method === 'GET') {
+        try {
+            const data = await getOriginalLaskuId(lasku_id);
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(data));
+        } catch (err) {
+            console.error(err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Server error' }));
+        }
+    }
 
     else {
     res.statusCode = 404;

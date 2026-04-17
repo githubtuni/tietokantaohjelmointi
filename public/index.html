@@ -89,6 +89,11 @@ th, td {
   cursor:pointer;
 }
 
+.past-due {
+  color: red;
+  font-weight: bold;
+}
+
 </style>
 
 </head>
@@ -295,12 +300,30 @@ th, td {
   <div id="laskuInfoValmiit" class="info">Valitse lasku klikkaamalla</div>
   <br>
 
-  <button onclick="createMuistutusmaksu()">+ Luo muistutusmaksu</button>
+  <button onclick="toggleForm('muistutusForm')">+ Luo laskusta muistutuslasku</button>
   <button onclick="laskuYhteenveto('ValmiitReportContainer')">+ Yhteenveto laskusta (R2,R3)</button>
   <button onclick="toggleForm('maksettuForm')">+ Merkitse lasku maksetuksi</button>
 
 
   <div id="ValmiitReportContainer" class="info report" style="display:none; margin-top:15px;"></div>
+
+  <div id="muistutusForm" class="form">
+      <h3>Luo laskusta muistutuslasku</h3>
+
+      <form id="formLaskuMuistutus">
+          <label>Lasku ID: <span id="laskuIdMuistutus">--</span></label><br><br>
+          
+          <label for="erapaivaInput">Uusi eräpäivä:</label><br>
+          <input type="date" id="erapaivaInput" name="erapaiva"><br><br>
+
+          <label for="lahetyspaivaInput">Uuden laskun lähetyspäivä:</label><br>
+          <input type="date" id="lahetyspaivaInput" name="lahetyspaiva"><br><br>
+
+          <button type="submit" class="submitButton">
+              Luo ja lähetä muistutuslasku
+          </button>
+      </form>
+  </div>
 
   <div id="maksettuForm" class="form">
     <h3>Merkitse lasku maksetuksi</h3>
@@ -404,6 +427,60 @@ function createMuistutusmaksu() {
     }
     alert("Muistutusmaksu luotu laskulle ID: " + selectedLaskuId);
     // TODO: create muistutusmaksu
+}
+
+async function reminderLasku() {
+  if (!selectedLaskuId) {
+    alert("Valitse ensin lasku!");
+    return;
+  }
+
+  const erapaiva = laskut.get(Number(selectedLaskuId)).erapaiva;
+  const maksettu = laskut.get(Number(selectedLaskuId)).maksettu;
+
+  if (!isPastDue(erapaiva, maksettu)) {
+    alert("Laskulle ei voi muodostaa muistutuslaskua! Eräpäivä ei ole mennyt tai lasku on jo maksettu");
+    document.getElementById("formLaskuMaksettu").reset();
+    return;
+  }
+
+  // TODO: uuden laskun lisäys, mietinnässä: osa vanhan laskun tiedoista kopioituu ja osa ei (päivämäärät formista), 
+  // vanhaan laskuun joku merkintä että muistutus tehty (vaatis muutoksen tietokantaan)?,
+  // eli tässä pitää muokata sekä uutta että vanhaa
+  // muuta TODO: lisää yhteenvetoihin muistutuslisähommat
+  /*
+  const lasku_id = selectedLaskuId;
+  const laskun_tila = "valmis";
+  const erapaivaRaw = document.getElementById("erapaivaInput").value;
+  const lahetyspaivaRaw = document.getElementById("lahetyspaivaInput").value;
+
+  const erapaiva = erapaivaRaw ? erapaivaRaw : null;
+  const lahetys_pvm = lahetyspaivaRaw ? lahetyspaivaRaw : null;
+
+  const res = await fetch("/lasku_update", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      lasku_id,
+      laskun_tila,
+      erapaiva,
+      lahetys_pvm
+    })
+  });
+
+  if (res.status === 403) {
+    alert("Ei riittäviä oikeuksia muokata laskua");
+  } 
+  else {
+    alert("Lasku maksettu!");
+  }
+
+  document.getElementById("formLaskuMuistutus").reset();
+
+  loadLaskut();
+  */
 }
 
 async function laskuYhteenveto(raporttidiv_id) {
@@ -615,6 +692,12 @@ async function updateLasku() {
 async function readyLasku() {
   if (!selectedLaskuId) {
     alert("Valitse ensin lasku!");
+    return;
+  }
+
+  if (laskut.get(Number(selectedLaskuId)).maksettu) {
+    alert("Lasku on jo merkitty maksetuksi!");
+    document.getElementById("formLaskuMaksettu").reset();
     return;
   }
 
@@ -854,6 +937,7 @@ async function loadLaskut() {
             document.getElementById('laskuIdUrakkatyoInput').value = selectedLaskuId;
             document.getElementById("laskuIdValmiiksi").textContent = selectedLaskuId;
             document.getElementById("laskuIdMaksettu").textContent = selectedLaskuId;
+            document.getElementById("laskuIdMuistutus").textContent = selectedLaskuId;
             populateLaskuData();
         };
 
@@ -870,12 +954,17 @@ async function loadLaskut() {
             keskeneraisetTbody.appendChild(tr);
         }
         else if (tila === "valmis"){
+
+          const pastDue = isPastDue(row.erapaiva, row.maksettu);
+          const erapaivaClass = pastDue ? "past-due" : "";
+
           tr.innerHTML = `
             <td>${row.lasku_id}</td>
             <td>${row.asiakas_nimi}</td>
             <td>${row.kohde_nimi}</td>
             <td>${row.kohde_osoite}</td>
-            <td>${row.erapaiva ? formatDateForInput(row.erapaiva) : "Puuttuu"}</td>
+            <td class="${erapaivaClass}">
+                ${row.erapaiva ? formatDateForInput(row.erapaiva) : "Puuttuu"}</td>
             <td>${row.maksettu 
                   ? `Kyllä (${row.maksu_pvm ? formatDateForInput(row.maksu_pvm) : "-"})` 
                   : "Ei"}</td>
@@ -1162,6 +1251,28 @@ document.getElementById("formLaskuMaksettu").addEventListener("submit", function
   e.preventDefault();
   readyLasku();
 });
+
+document.getElementById("formLaskuMuistutus").addEventListener("submit", function (e) {
+  e.preventDefault();
+  reminderLasku();
+});
+
+// Checks if the lasku is past due AND it has not been paid
+function isPastDue(erapaiva, maksettu) {
+  if (!erapaiva) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const date = new Date(erapaiva);
+  if (isNaN(date)) return false; // handle invalid dates safely
+
+  date.setHours(0, 0, 0, 0);
+
+  const isPaid = maksettu === true || maksettu === "true";
+
+  return date < today && !isPaid;
+}
 
 </script>
 

@@ -362,3 +362,26 @@ export async function getR6() {
     return [];
   }
 }
+
+
+export async function getOriginalLaskuId(lasku_id) {
+  const result = await pool.query(`
+    WITH RECURSIVE original AS (
+        SELECT lasku_id, ed_lasku_id
+        FROM lasku
+        WHERE lasku_id = $1
+
+        UNION ALL
+
+        SELECT l.id, l.ed_lasku_id
+        FROM lasku l
+        JOIN original o ON o.ed_lasku_id = l.lasku_id
+    )
+    SELECT lasku_id
+    FROM original
+    WHERE ed_lasku_id IS NULL
+    LIMIT 1;
+  `,[lasku_id]); 
+
+  return result.rows[0];
+}
