@@ -313,11 +313,11 @@ th, td {
       <form id="formLaskuMuistutus">
           <label>Lasku ID: <span id="laskuIdMuistutus">--</span></label><br><br>
           
-          <label for="erapaivaInput">Uusi eräpäivä:</label><br>
-          <input type="date" id="erapaivaInput" name="erapaiva"><br><br>
+          <label for="erapaivaUusiInput">Uusi eräpäivä:</label><br>
+          <input type="date" id="erapaivaUusiInput" name="erapaiva"><br><br>
 
-          <label for="lahetyspaivaInput">Uuden laskun lähetyspäivä:</label><br>
-          <input type="date" id="lahetyspaivaInput" name="lahetyspaiva"><br><br>
+          <label for="lahetyspaivaUusiInput">Uuden laskun lähetyspäivä:</label><br>
+          <input type="date" id="lahetyspaivaUusiInput" name="lahetyspaiva"><br><br>
 
           <button type="submit" class="submitButton">
               Luo ja lähetä muistutuslasku
@@ -435,52 +435,57 @@ async function reminderLasku() {
     return;
   }
 
-  const erapaiva = laskut.get(Number(selectedLaskuId)).erapaiva;
-  const maksettu = laskut.get(Number(selectedLaskuId)).maksettu;
+  const resold = await fetch(`/old_lasku?id=${selectedLaskuId}`);
+  const data = await resold.json();
 
-  if (!isPastDue(erapaiva, maksettu)) {
-    alert("Laskulle ei voi muodostaa muistutuslaskua! Eräpäivä ei ole mennyt tai lasku on jo maksettu");
-    document.getElementById("formLaskuMaksettu").reset();
+
+  const erapaivaVanha = data.erapaiva;
+  const maksettu = data.maksettu;
+
+  const isParent = await checkIfParent(data.lasku_id)
+
+  if (!isPastDue(erapaivaVanha, maksettu) || isParent) {
+    alert("Laskulle ei voi muodostaa muistutuslaskua! Eräpäivä ei ole mennyt, lasku on jo maksettu tai siitä on jo luotu muistutuslasku");
+    document.getElementById("formLaskuMuistutus").reset();
     return;
   }
 
-  // TODO: uuden laskun lisäys, mietinnässä: osa vanhan laskun tiedoista kopioituu ja osa ei (päivämäärät formista), 
-  // vanhaan laskuun joku merkintä että muistutus tehty (vaatis muutoksen tietokantaan)?,
-  // eli tässä pitää muokata sekä uutta että vanhaa
-  // muuta TODO: lisää yhteenvetoihin muistutuslisähommat
-  /*
-  const lasku_id = selectedLaskuId;
-  const laskun_tila = "valmis";
-  const erapaivaRaw = document.getElementById("erapaivaInput").value;
-  const lahetyspaivaRaw = document.getElementById("lahetyspaivaInput").value;
+  const erapaivaRaw = document.getElementById("erapaivaUusiInput").value;
+  const lahetyspaivaRaw = document.getElementById("lahetyspaivaUusiInput").value;
 
   const erapaiva = erapaivaRaw ? erapaivaRaw : null;
   const lahetys_pvm = lahetyspaivaRaw ? lahetyspaivaRaw : null;
 
-  const res = await fetch("/lasku_update", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      lasku_id,
-      laskun_tila,
-      erapaiva,
-      lahetys_pvm
-    })
+  const tyokohde_id = data.tyokohde_id;
+  const tyotyyppi = data.tyotyyppi;
+  const ed_lasku_id = data.lasku_id;
+  const viivastyskorko = data.viivastyskorko * 1.16;
+  const laskutuslisa = data.laskutuslisa + 5;
+  const muistutusnumero = data.muistutusnumero + 1;
+
+  const res = await fetch("/create_reminder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        tyokohde_id, 
+        lahetys_pvm, 
+        tyotyyppi, 
+        erapaiva, 
+        ed_lasku_id, 
+        viivastyskorko, 
+        laskutuslisa, 
+        muistutusnumero })
   });
 
   if (res.status === 403) {
-    alert("Ei riittäviä oikeuksia muokata laskua");
+    alert("Ei riittäviä oikeuksia luoda laskua");
   } 
   else {
-    alert("Lasku maksettu!");
+    alert("Muistutuslasku luotu!");
   }
-
   document.getElementById("formLaskuMuistutus").reset();
 
   loadLaskut();
-  */
 }
 
 async function laskuYhteenveto(raporttidiv_id) {
@@ -956,7 +961,8 @@ async function loadLaskut() {
         else if (tila === "valmis"){
 
           const pastDue = isPastDue(row.erapaiva, row.maksettu);
-          const erapaivaClass = pastDue ? "past-due" : "";
+          const isNotParent = !checkIfParent(row.lasku_id);
+          const erapaivaClass = (pastDue || isNotParent) ? "past-due" : "";
 
           tr.innerHTML = `
             <td>${row.lasku_id}</td>
@@ -1273,6 +1279,16 @@ function isPastDue(erapaiva, maksettu) {
 
   return date < today && !isPaid;
 }
+
+// Checks if a reminder lasku has been created of given lasku id
+async function checkIfParent(lasku_id) {
+
+  const response = await fetch(`/is_parent_lasku?id=${lasku_id}`);
+  const data = await response.json();
+
+  return data;
+}
+
 
 </script>
 

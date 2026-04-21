@@ -19,7 +19,10 @@ import {
     getUrakkatyotFull,
     laskeLasku,
     getR6,
-    getOriginalLaskuId
+    getOriginalLaskuId,
+    isParentLasku,
+    addReminderLasku,
+    getOldLasku
 } from './db/db.js';
 
 const hostname = '192.168.4.115';
@@ -325,9 +328,11 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Server error' }));
     }
     }
-    else if (req.url === '/original_lasku_id' && req.method === 'GET') {
+    else if (req.url.startsWith('/original_lasku_id') && req.method === 'GET') {
         try {
-            const data = await getOriginalLaskuId(lasku_id);
+            const url = new URL(req.url, `http://${req.headers.host}`);
+            const id = url.searchParams.get('id');
+            const data = await getOriginalLaskuId(id);
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(data));
         } catch (err) {
@@ -337,7 +342,60 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    else if (req.url.startsWith('/is_parent_lasku') && req.method === 'GET') {
+        try {
+            const url = new URL(req.url, `http://${req.headers.host}`);
+            const id = url.searchParams.get('id');
+            const data = await isParentLasku(id);
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(data));
+        } catch (err) {
+            console.error(err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Server error' }));
+        }
+    }
+
+    else if (req.url === '/create_reminder' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                await addReminderLasku(data.tyokohde_id, data.lahetys_pvm, data.tyotyyppi, data.erapaiva, data.ed_lasku_id, data.viivastyskorko, data.laskutuslisa, data.muistutusnumero);
+                res.end('ok');
+            } catch (err) {
+                if (err.message === "Requires admin privileges.") {
+                    res.statusCode = 403;
+                    res.end(JSON.stringify({ error: 'Insufficient privileges to update lasku'}))
+                }
+                else {
+                    console.error(error);
+                    res.statusCode = 500;
+                    res.end(JSON.stringify({error: 'Server error'}));
+                }
+            }
+        });
+    }
+
+    else if (req.url.startsWith('/old_lasku') && req.method === 'GET') {
+        try {
+            const url = new URL(req.url, `http://${req.headers.host}`);
+            const id = url.searchParams.get('id');
+            const lasku = await getOldLasku(id);
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(lasku));
+        } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Database error' }));
+        }
+    }
+
     else {
+        console.log(req.url, req.method);
     res.statusCode = 404;
     res.end('Not found');
     }

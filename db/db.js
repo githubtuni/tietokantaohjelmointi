@@ -385,3 +385,72 @@ export async function getOriginalLaskuId(lasku_id) {
 
   return result.rows[0];
 }
+
+export async function isParentLasku(lasku_id) {
+  const result = await pool.query(`
+    SELECT EXISTS (
+      SELECT 1
+      FROM lasku
+      WHERE ed_lasku_id = $1
+    ) AS "isParent";
+  `, [lasku_id]);
+
+  console.log(result.rows[0]);
+  return result.rows[0].isParent;
+}
+
+export async function addReminderLasku(tyokohde_id, lahetys_pvm, tyotyyppi, erapaiva, ed_lasku_id, viivastyskorko, laskutuslisa, muistutusnumero) {
+  
+  if (userRole !== "admin") {
+    throw new Error("Requires admin privileges.")
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO lasku (
+        tyokohde_id,
+        lahetys_pvm,
+        laskun_tila,
+        tyotyyppi,
+        erapaiva,
+        maksettu,
+        ed_lasku_id,
+        viivastyskorko,
+        laskutuslisa,
+        muistutusnumero
+      ) 
+      VALUES ($1,$2,'valmis',$3,$4,false,$5,$6,$7,$8)`,
+      [tyokohde_id, lahetys_pvm, tyotyyppi, erapaiva, ed_lasku_id, viivastyskorko, laskutuslisa, muistutusnumero]
+    );
+
+  } catch (err) {
+    console.error(err);
+  }
+
+} 
+
+export async function getOldLasku(lasku_id) {
+    try {
+      const result = await pool.query(`
+      SELECT 
+        l.lasku_id,
+        l.tyokohde_id,
+        l.lahetys_pvm,
+        l.maksu_pvm,
+        l.tyotyyppi,
+        l.erapaiva,
+        l.maksettu,
+        l.ed_lasku_id,
+        l.viivastyskorko,
+        l.laskutuslisa,
+        l.muistutusnumero
+      FROM lasku l
+      WHERE l.lasku_id = $1
+      `,[lasku_id]);
+      return result.rows[0];
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+}
+
