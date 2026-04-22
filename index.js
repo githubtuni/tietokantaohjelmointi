@@ -332,6 +332,11 @@ const server = http.createServer(async (req, res) => {
         try {
             const url = new URL(req.url, `http://${req.headers.host}`);
             const id = url.searchParams.get('id');
+
+            if (!id) {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: 'Missing id parameter' }));
+            }
             const data = await getOriginalLaskuId(id);
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(data));

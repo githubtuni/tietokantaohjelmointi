@@ -420,15 +420,6 @@ let allTyokohteet = [];
 let allAsiakkaat = [];
 let laskut = new Map()
 
-function createMuistutusmaksu() {
-    if (!selectedLaskuId) {
-        alert("Valitse ensin lasku!");
-        return;
-    }
-    alert("Muistutusmaksu luotu laskulle ID: " + selectedLaskuId);
-    // TODO: create muistutusmaksu
-}
-
 async function reminderLasku() {
   if (!selectedLaskuId) {
     alert("Valitse ensin lasku!");
@@ -437,6 +428,9 @@ async function reminderLasku() {
 
   const resold = await fetch(`/old_lasku?id=${selectedLaskuId}`);
   const data = await resold.json();
+
+  const resog = await fetch(`/original_lasku_id?id=${selectedLaskuId}`);
+  const ogdata = await resog.json();
 
 
   const erapaivaVanha = data.erapaiva;
@@ -459,8 +453,8 @@ async function reminderLasku() {
   const tyokohde_id = data.tyokohde_id;
   const tyotyyppi = data.tyotyyppi;
   const ed_lasku_id = data.lasku_id;
-  const viivastyskorko = data.viivastyskorko * 1.16;
-  const laskutuslisa = data.laskutuslisa + 5;
+  const viivastyskorko = daysBetween(ogdata.erapaiva, lahetys_pvm);
+  const laskutuslisa = Number(data.laskutuslisa) + 5;
   const muistutusnumero = data.muistutusnumero + 1;
 
   const res = await fetch("/create_reminder", {
@@ -495,10 +489,16 @@ async function laskuYhteenveto(raporttidiv_id) {
     }
 
     try {
+        const result = await fetch(`/original_lasku_id?id=${selectedLaskuId}`);
+        const og_lasku = await result.json();
+
+        const resold = await fetch(`/old_lasku?id=${selectedLaskuId}`);
+        const this_lasku = await resold.json();
+
         const res = await fetch('/lasku_by_id', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lasku_id: selectedLaskuId })
+            body: JSON.stringify({ lasku_id: og_lasku.lasku_id })
         });
 
         if (!res.ok) throw new Error('Failed to fetch lasku data');
@@ -584,12 +584,22 @@ async function laskuYhteenveto(raporttidiv_id) {
             html += `<p>Ei tarvikkeita</p>`;
         }
 
+
+
+        const viivastyslisa = 0;
+        if (this_lasku.muistutusnumero >= 2){
+          viivastyslisa = totals.kokonais * 0.16 * (this_lasku.viivastyskorko/365);
+        }
+        const kokonaislisat = Number(this_lasku.laskutuslisa) + viivastyslisa;
+        const kokonaissumma = totals.kokonais + kokonaislisat;
+
         html += `<h4>Hinnat</h4>`;
         html += `<p>Työsumma (ennen alv): ${totals.tyoSumma.toFixed(2)}</p>`;
         html += `<p>Työn alv: ${totals.alvTyoSumma.toFixed(2)}</p>`;
         html += `<p>Tarvikesumma (ennen alv): ${totals.tarvikeSumma.toFixed(2)}</p>`;
         html += `<p>Tarvikkeiden alv: ${totals.alvTarvikeSumma.toFixed(2)}</p>`;
-        html += `<p><strong>Kokonaissumma: ${totals.kokonais.toFixed(2)}</strong></p>`;
+        html += `<p>Muistutuslaskun laskutuslisä ja viivästyskorko: ${this_lasku.laskutuslisa} + ${viivastyslisa} = ${kokonaislisat}</p>`;
+        html += `<p><strong>Kokonaissumma: ${kokonaissumma.toFixed(2)}</strong></p>`;
         html += `<p>Kotitalousvähennys (työ ja sen alv): ${totals.kotitalousvahennys.toFixed(2)}</p>`;
 
         html += `<button onclick="closeReports()" style="margin-top:10px;">Sulje</button>`;
@@ -919,7 +929,7 @@ async function loadLaskut() {
     keskeneraisetTbody.innerHTML = '';
     valmiitTbody.innerHTML = '';
 
-    data.forEach(row => {
+    data.forEach(async row => {
         laskut.set(row.lasku_id, row);
 
         const tr = document.createElement('tr');
@@ -961,8 +971,8 @@ async function loadLaskut() {
         else if (tila === "valmis"){
 
           const pastDue = isPastDue(row.erapaiva, row.maksettu);
-          const isNotParent = !checkIfParent(row.lasku_id);
-          const erapaivaClass = (pastDue || isNotParent) ? "past-due" : "";
+          const isParent = await checkIfParent(row.lasku_id);
+          const erapaivaClass = (pastDue && !isParent) ? "past-due" : "";
 
           tr.innerHTML = `
             <td>${row.lasku_id}</td>
@@ -974,7 +984,7 @@ async function loadLaskut() {
             <td>${row.maksettu 
                   ? `Kyllä (${row.maksu_pvm ? formatDateForInput(row.maksu_pvm) : "-"})` 
                   : "Ei"}</td>
-            <td>${row.ed_lasku_id}</td>
+            <td>${row.ed_lasku_id === null ? "Alkuperäinen lasku" : row.ed_lasku_id}</td>
             <td>${row.muistutusnumero}</td>`;
             valmiitTbody.appendChild(tr);
         }
@@ -1289,6 +1299,16 @@ async function checkIfParent(lasku_id) {
   return data;
 }
 
+function daysBetween(date1, date2) {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+
+  d1.setHours(0, 0, 0, 0);
+  d2.setHours(0, 0, 0, 0);
+
+  const diffMs = d2 - d1;
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
 
 </script>
 
