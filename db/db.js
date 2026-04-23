@@ -263,6 +263,7 @@ export async function getTarvikkeetFull(lasku_id) {
         t.nimi,
         t.myyntihinta,
         t.alv,
+        t.yksikko,
         lt.kpl,
         lt.alepros
      FROM lasku_tarvike lt
