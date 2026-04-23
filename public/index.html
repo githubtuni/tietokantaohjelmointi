@@ -104,7 +104,7 @@ th, td {
 <div class="tabs">
   <button class="tab-button active" onclick="openTab(event, 'keskeneraisetLaskut')">Keskeneräiset laskut</button>
   <button class="tab-button" onclick="openTab(event, 'valmiitLaskut')">Valmiit laskut</button>
-  <button class="tab-button" onclick="openTab(event, 'asiakkaat')">Asiakkaat</button>
+  <button class="tab-button" onclick="openTab(event, 'asiakkaat')">Asiakkaat ja työkohteet</button>
   <button class="tab-button" onclick="openTab(event, 'r6')">R6 raportti</button>
 </div>
 
@@ -127,7 +127,7 @@ th, td {
   <br>
     
   <button onclick="toggleForm('laskuForm')">+ Luo uusi laskupohja</button>
-  <button onclick="toggleForm('tuntityoForm')">+ Lisää tuntityö</button>
+  <button onclick="toggleForm('tuntityoForm')">+ Lisää tuntityö (T2)</button>
   <button onclick="toggleForm('urakkatyoForm')">+ Lisää urakkatyö</button>
   <button onclick="toggleForm('tarvikeForm')">+ Lisää tarvike</button>
   <button onclick="laskuYhteenveto('KeskenReportContainer')">+ Muodosta hinta-arvio/tarjous (R1,R4)</button>
@@ -139,7 +139,7 @@ th, td {
       <h3>Uusi laskupohja</h3>
 
       <form id="formLasku">
-          <label for="tyokohdeSelect">Työkohteen ID ja asiakas:</label><br>
+          <label for="tyokohdeSelect">Valitse työkohde:</label><br>
           <select id="tyokohdeSelect" name="tyokohde_id" required>
               <option value="">-- Valitse työkohde --</option>
           </select><br><br>
@@ -162,19 +162,13 @@ th, td {
       <form id="formLaskuValmiiksi">
           <label>Lasku ID: <span id="laskuIdValmiiksi">--</span></label><br><br>
 
-          <label for="laskuMaaraInput">Kuinka monta laskua luodaan:</label><br>
-          <select id="laskuMaaraSelect">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-          </select><br><br>
-          <!-- TODO: laskujen jakamistoiminto (eräpäiviä ja lähetyspäiviä luodaan sen mukaan)-->
-          
+          <label>Luodaan yksi lasku, valitse laskun lähetyspäivä ja eräpäivä</label><br><br>
+
+          <label for="lahetyspaivaInput">Lähetyspäivä:</label><br>
+          <input type="date" id="lahetyspaivaInput" name="lahetyspaiva"><br><br>
+
           <label for="erapaivaInput">Eräpäivä:</label><br>
           <input type="date" id="erapaivaInput" name="erapaiva"><br><br>
-
-          <label for="lahetyspaivaInput">Laskun lähetyspäivä:</label><br>
-          <input type="date" id="lahetyspaivaInput" name="lahetyspaiva"><br><br>
 
           <button type="submit" class="submitButton">
               Merkitse valmiiksi ja lähetä lasku
@@ -281,6 +275,8 @@ th, td {
 </div>
 
 <div id="valmiitLaskut" class="tab-content">
+  <div>Punaisella merkitty laskut joissa eräpäivä umpeutunut, laskua ei ole maksettu ja muistutuslaskua ei ole luotu. (T3) </div>
+  <br>
   <table id="valmiitLaskutTable">
     <thead>
       <tr>
@@ -300,7 +296,7 @@ th, td {
   <div id="laskuInfoValmiit" class="info">Valitse lasku klikkaamalla</div>
   <br>
 
-  <button onclick="toggleForm('muistutusForm')">+ Luo laskusta muistutuslasku</button>
+  <button onclick="toggleForm('muistutusForm')">+ Luo laskusta muistutuslasku (T3)</button>
   <button onclick="laskuYhteenveto('ValmiitReportContainer')">+ Yhteenveto laskusta (R2,R3)</button>
   <button onclick="toggleForm('maksettuForm')">+ Merkitse lasku maksetuksi</button>
 
@@ -370,7 +366,7 @@ th, td {
   <div id="tyokohdeInfo" class="info">Lisätietoja klikkaamalla</div>
   <br>
 
-  <button onclick="toggleForm('tyokohdeForm')">+ Lisää asiakkaalle työkohde</button>
+  <button onclick="toggleForm('tyokohdeForm')">+ Lisää asiakkaalle työkohde (T1)</button>
   <button onclick="toggleForm('asiakasForm')">+ Lisää uusi asiakas</button>
 
   <div id="tyokohdeForm" class="form">
@@ -508,17 +504,27 @@ async function laskuYhteenveto(raporttidiv_id) {
         const tyyppi = tyot.tyyppi;
 
         let html = `<h3>Yhteenveto: Lasku ID ${selectedLaskuId}</h3>`;
+        if (this_lasku.muistutusnumero >= 1) {
+          const label = this_lasku.muistutusnumero >= 2 ? "Karhulasku" : "Muistutuslasku";
+
+          html += `<div style="color:red;">
+            <strong>${label}: ${this_lasku.muistutusnumero}. muistutus</strong>
+          </div><br>`;
+        }
         html += `<strong>Asiakas:</strong> ${lasku.asiakas_nimi} (${lasku.asiakas_osoite})<br>`;
         html += `<strong>Työkohde:</strong> ${lasku.kohde_nimi} (${lasku.kohde_osoite})<br>`;
         html += `<strong>Työtyyppi:</strong> ${lasku.tyotyyppi}<br><br>`;
 
         let raporttiDiv = document.getElementById(raporttidiv_id);
 
+        const format = (d) =>
+          new Date(d).toISOString().split("T")[0];
+
         html += `<h4>${tyyppi === "urakkatyö" ? "Urakkatyö" : "Tuntityöt"}</h4>`;
         if (tyot.rows.length > 0) {
 
           if (tyyppi === "tuntityö"){
-            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>Tunnit</th><th>Alennus %</th><th>ALV %</th><th>Summa</th></tr></thead><tbody>`;
+            html += `<table><thead><tr><th>Nimi</th><th>Päivämäärä</th><th>Hinta €</th><th>Tunnit h</th><th>Alennus %</th><th>ALV %</th><th>Summa €</th></tr></thead><tbody>`;
             
             tyot.rows.forEach(t => {
               const perus = t.hinta * t.tunnit;
@@ -529,6 +535,11 @@ async function laskuYhteenveto(raporttidiv_id) {
 
               html += `<tr>
                   <td>${t.nimi}</td>
+                  <td>${
+                    t.paivamaara
+                      ? (isNaN(new Date(t.paivamaara)) ? "" : format(t.paivamaara))
+                      : ""
+                  }</td>
                   <td>${t.hinta}</td>
                   <td>${t.tunnit}</td>
                   <td>${t.alepros || 0}</td>
@@ -539,7 +550,7 @@ async function laskuYhteenveto(raporttidiv_id) {
             html += `</tbody></table>`;
           }
           else if (tyyppi === "urakkatyö") {
-            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>ALV %</th><th>Summa</th></tr></thead><tbody>`;
+            html += `<table><thead><tr><th>Nimi</th><th>Hinta €</th><th>ALV %</th><th>Summa €</th></tr></thead><tbody>`;
 
             tyot.rows.forEach(t => {
               const netto = t.hinta;
@@ -547,7 +558,7 @@ async function laskuYhteenveto(raporttidiv_id) {
               const total = netto + alv;
 
               html += `<tr>
-                  <td>${"Urakka"}</td>
+                  <td>Urakka ${format(t.aloituspaiva)} - ${format(t.lopetuspaiva)}</td>
                   <td>${t.hinta}</td>
                   <td>${24}</td>
                   <td>${total.toFixed(2)}</td>
@@ -562,7 +573,7 @@ async function laskuYhteenveto(raporttidiv_id) {
 
         html += `<h4>Tarvikkeet</h4>`;
         if (tarvikkeet.length > 0) {
-            html += `<table><thead><tr><th>Nimi</th><th>Hinta</th><th>Kpl</th><th>Alennus %</th><th>ALV %</th><th>Summa</th></tr></thead><tbody>`;
+            html += `<table><thead><tr><th>Nimi</th><th>Hinta €</th><th>Yksikkö</th><th>Kpl</th><th>Alennus %</th><th>ALV %</th><th>Summa €</th></tr></thead><tbody>`;
             tarvikkeet.forEach(t => {
                 const perus = t.myyntihinta * t.kpl;
                 const ale = t.alepros || 0;
@@ -573,6 +584,7 @@ async function laskuYhteenveto(raporttidiv_id) {
                 html += `<tr>
                     <td>${t.nimi}</td>
                     <td>${t.myyntihinta}</td>
+                    <td>${t.yksikko}</td>
                     <td>${t.kpl}</td>
                     <td>${t.alepros || 0}</td>
                     <td>${t.alv}</td>
@@ -598,7 +610,9 @@ async function laskuYhteenveto(raporttidiv_id) {
         html += `<p>Työn alv: ${totals.alvTyoSumma.toFixed(2)}</p>`;
         html += `<p>Tarvikesumma (ennen alv): ${totals.tarvikeSumma.toFixed(2)}</p>`;
         html += `<p>Tarvikkeiden alv: ${totals.alvTarvikeSumma.toFixed(2)}</p>`;
-        html += `<p>Muistutuslaskun laskutuslisä ja viivästyskorko: ${this_lasku.laskutuslisa} + ${viivastyslisa} = ${kokonaislisat}</p>`;
+        if (this_lasku.muistutusnumero >= 1) {
+          html += `<div><p>Muistutuslaskun laskutuslisä ${this_lasku.laskutuslisa} ja viivästyskorko ${viivastyslisa}: ${kokonaislisat}</p></div>`;
+        }
         html += `<p><strong>Kokonaissumma: ${kokonaissumma.toFixed(2)}</strong></p>`;
         html += `<p>Kotitalousvähennys (työ ja sen alv): ${totals.kotitalousvahennys.toFixed(2)}</p>`;
 
@@ -762,7 +776,7 @@ function populateLaskuData() {
     allTyokohteet.forEach(tyokohde => {
       const option = document.createElement('option');
       option.value = tyokohde.tyokohde_id;
-      option.textContent = `Osoite: ${tyokohde.osoite}, ID: ${tyokohde.tyokohde_id}, Asiakas: ${tyokohde.asiakas_id}`;
+      option.textContent = `ID ${tyokohde.tyokohde_id}: ${tyokohde.osoite}, , Asiakas: ${tyokohde.asiakas_id}`;
 
       if (tyokohde.tyokohde_id === laskuData.tyokohde_id) {
           option.selected = true;
@@ -1086,7 +1100,7 @@ async function loadTyokohteet() {
     data.forEach(row => {
       const option = document.createElement('option');
       option.value = row.tyokohde_id;
-      option.textContent = `Osoite: ${row.osoite}, ID: ${row.tyokohde_id}, Asiakas: ${row.asiakas_id}`;
+      option.textContent = `ID ${row.tyokohde_id}: ${row.osoite}, Asiakas: ${row.asiakas_id}`;
       select.appendChild(option);
     });
   }
