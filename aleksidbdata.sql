@@ -143,7 +143,6 @@ VALUES
 
 -- Jokinen Lissu esimerkkilasku nro 4 esimerkkidatasta.
 INSERT INTO lasku (
-  lasku_id,
   tyokohde_id,
   lahetys_pvm,
   maksu_pvm,
@@ -156,7 +155,7 @@ INSERT INTO lasku (
   laskutuslisa,
   muistutusnumero
 )
-VALUES (1, 2,'2026-02-01','2026-02-15','Valmis','tuntityö','2026-02-15',true,NULL,0,0,0);
+VALUES (2,'2026-02-01','2026-02-15','Valmis','tuntityö','2026-02-15',true,NULL,0,0,0);
 
 -- Tuntityöt yllä olevaan nro 4 laskuun
 INSERT INTO tuntityo (
@@ -179,7 +178,6 @@ VALUES
 
 -- Jokinen Lissu esimerkkidata lasku nro 8
 INSERT INTO lasku (
-  lasku_id,
   tyokohde_id,
   lahetys_pvm,
   maksu_pvm,
@@ -192,7 +190,7 @@ INSERT INTO lasku (
   laskutuslisa,
   muistutusnumero
 )
-VALUES (2, 3,'2026-03-01','2026-03-15','Valmis','urakkatyö','2026-02-15',false,NULL,0,0,0);
+VALUES (3,'2026-03-01','2026-03-15','Valmis','urakkatyö','2026-02-15',false,NULL,0,0,0);
 
 -- Lasku nro 8 esimerkkidatasta
 INSERT INTO urakkatyo (lasku_id, sopimuspaiva, aloituspaiva, lopetuspaiva, hinta, tila) VALUES
@@ -204,7 +202,6 @@ VALUES (2, 14, 2, 0);
 
 -- Näsänen Masa esimerkkilasku nro 9 esimerkkidatasta
 INSERT INTO lasku (
-  lasku_id,
   tyokohde_id,
   lahetys_pvm,
   maksu_pvm,
@@ -217,7 +214,7 @@ INSERT INTO lasku (
   laskutuslisa,
   muistutusnumero
 )
-VALUES (3, 5,'2026-03-01',null,'Valmis','tuntityö','2026-03-15',false,NULL,0,0,0);
+VALUES (5,'2026-03-01',null,'Valmis','tuntityö','2026-03-15',false,NULL,0,0,0);
 
 -- Tuntityöt yllä olevaan laskuun Masalle
 INSERT INTO tuntityo (
