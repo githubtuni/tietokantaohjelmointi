@@ -598,7 +598,7 @@ async function laskuYhteenveto(raporttidiv_id) {
 
 
 
-        const viivastyslisa = 0;
+        let viivastyslisa = 0;
         if (this_lasku.muistutusnumero >= 2){
           viivastyslisa = totals.kokonais * 0.16 * (this_lasku.viivastyskorko/365);
         }
