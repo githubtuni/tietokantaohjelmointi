@@ -611,7 +611,7 @@ async function laskuYhteenveto(raporttidiv_id) {
         html += `<p>Tarvikesumma (ennen alv): ${totals.tarvikeSumma.toFixed(2)}</p>`;
         html += `<p>Tarvikkeiden alv: ${totals.alvTarvikeSumma.toFixed(2)}</p>`;
         if (this_lasku.muistutusnumero >= 1) {
-          html += `<div><p>Muistutuslaskun laskutuslisä ${this_lasku.laskutuslisa} ja viivästyskorko ${viivastyslisa}: ${kokonaislisat}</p></div>`;
+          html += `<div><p>Muistutuslaskun laskutuslisä ${this_lasku.laskutuslisa} ja viivästyskorko ${viivastyslisa.toFixed(2)}: ${kokonaislisat.toFixed(2)}</p></div>`;
         }
         html += `<p><strong>Kokonaissumma: ${kokonaissumma.toFixed(2)}</strong></p>`;
         html += `<p>Kotitalousvähennys (työ ja sen alv): ${totals.kotitalousvahennys.toFixed(2)}</p>`;
